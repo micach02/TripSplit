@@ -1,0 +1,6 @@
+# Keep LF line endings in the repo and the working copy on every OS
+# (the CI build runs on Linux; scripts and SQL stay byte-identical).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.webp binary

@@ -1,0 +1,79 @@
+# Builds TripSplit and publishes it to GitHub Pages on every push to main.
+#
+# One-time setup in the GitHub repository:
+#   Settings → Pages → Build and deployment → Source: "GitHub Actions"
+#   Settings → Secrets and variables → Actions → New repository secret:
+#     VITE_SUPABASE_URL       https://<project-ref>.supabase.co
+#     VITE_SUPABASE_ANON_KEY  the project's anon / publishable key (never the service-role key)
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; a newer push waits rather than cancelling a live deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check Supabase settings
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::Add the VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY repository secrets (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm test
+
+      - name: Build
+        env:
+          # Served from https://<user>.github.io/<repo>/
+          BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      # GitHub Pages has no SPA fallback: unknown paths (e.g. /TripSplit/invite/…) get 404.html,
+      # so make that the app too and let React Router handle the URL.
+      - name: SPA fallback
+        run: cp dist/index.html dist/404.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
