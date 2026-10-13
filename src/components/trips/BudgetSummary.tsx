@@ -11,22 +11,31 @@ interface BudgetSummaryProps {
   format: (minor: number) => string
   /** Show the 75/90/100% warning under the bar. */
   showWarning?: boolean
+  /** "Budget" (trips) or "Monthly budget" */
+  budgetLabel?: string
   className?: string
 }
 
 /** Budget · Spent · Remaining with a progress bar — the heart of every trip page. */
-export function BudgetSummary({ budgetMinor, spentMinor, format, showWarning = true, className }: BudgetSummaryProps) {
+export function BudgetSummary({
+  budgetMinor,
+  spentMinor,
+  format,
+  showWarning = true,
+  budgetLabel = 'Budget',
+  className,
+}: BudgetSummaryProps) {
   const usage = getBudgetUsage(spentMinor, budgetMinor)
   const tone = budgetTone(usage)
   const over = usage.overBy > 0
-  const warning = showWarning ? getBudgetWarning(usage, format) : null
+  const warning = showWarning ? getBudgetWarning(usage, format, budgetLabel.toLowerCase().replace(/^budget$/, 'trip budget')) : null
   const noBudget = budgetMinor === 0
 
   return (
     <div className={className}>
       <dl className="grid grid-cols-3 gap-2 sm:gap-4">
         <div className="min-w-0">
-          <dt className="text-xs font-semibold text-slate-500 sm:text-sm">Budget</dt>
+          <dt className="text-xs font-semibold text-slate-500 sm:text-sm">{budgetLabel}</dt>
           <dd className="mt-0.5 truncate text-base font-extrabold tabular-nums sm:text-xl">
             {noBudget ? '—' : format(budgetMinor)}
           </dd>
@@ -40,7 +49,7 @@ export function BudgetSummary({ budgetMinor, spentMinor, format, showWarning = t
           <dd
             className={cn(
               'mt-0.5 truncate text-base font-extrabold tabular-nums sm:text-xl',
-              noBudget ? 'text-slate-400' : over ? 'text-red-600' : 'text-emerald-600',
+              noBudget ? 'text-slate-500' : over ? 'text-red-600' : 'text-emerald-700',
             )}
           >
             {noBudget ? '—' : format(over ? usage.overBy : usage.remaining)}
@@ -50,11 +59,11 @@ export function BudgetSummary({ budgetMinor, spentMinor, format, showWarning = t
 
       {usage.percentUsed !== null && (
         <div className="mt-4">
-          <ProgressBar value={usage.percentUsed} tone={tone} label={`${usage.percentUsed}% of the trip budget spent`} />
+          <ProgressBar value={usage.percentUsed} tone={tone} label={`${usage.percentUsed}% of the ${budgetLabel.toLowerCase()} spent`} />
           <p
             className={cn(
               'mt-1.5 text-xs font-semibold tabular-nums',
-              tone === 'danger' ? 'text-red-600' : tone === 'warning' ? 'text-orange-600' : 'text-slate-500',
+              tone === 'danger' ? 'text-red-600' : tone === 'warning' ? 'text-orange-700' : 'text-slate-500',
             )}
           >
             {usage.percentUsed}% spent

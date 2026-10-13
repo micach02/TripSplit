@@ -23,12 +23,12 @@ export function MemberStack({ members, max = 4, className }: MemberStackProps) {
           src={member.avatarUrl}
           size="sm"
           decorative
-          className="ring-2 ring-white"
+          className="ring-2 ring-surface"
         />
       ))}
       {extra > 0 && (
         <span
-          className="flex size-8 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600 ring-2 ring-white"
+          className="flex size-8 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600 ring-2 ring-surface"
           aria-hidden
         >
           +{extra}

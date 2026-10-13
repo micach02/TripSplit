@@ -11,6 +11,8 @@ import { formatDate } from '@/utils/format'
 interface MemberListProps {
   tripId: string
   tripName: string
+  /** "trip" or "budget" */
+  noun?: string
   members: TripMemberWithProfile[]
   currentUserId: string
   isOwner: boolean
@@ -18,7 +20,7 @@ interface MemberListProps {
   onRemoved: (userId: string, self: boolean) => void
 }
 
-export function MemberList({ tripId, tripName, members, currentUserId, isOwner, onRemoved }: MemberListProps) {
+export function MemberList({ tripId, tripName, noun = 'trip', members, currentUserId, isOwner, onRemoved }: MemberListProps) {
   const [target, setTarget] = useState<TripMemberWithProfile | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -52,10 +54,10 @@ export function MemberList({ tripId, tripName, members, currentUserId, isOwner, 
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-2 truncate font-semibold text-slate-900">
                   <span className="truncate">{member.profile.full_name}</span>
-                  {isMe && <span className="text-sm font-normal text-slate-400">(you)</span>}
+                  {isMe && <span className="text-sm font-normal text-slate-500">(you)</span>}
                 </p>
                 <p className="truncate text-sm text-slate-500">{member.profile.email}</p>
-                <p className="text-xs text-slate-400">Joined {formatDate(member.joinedAt)}</p>
+                <p className="text-xs text-slate-500">Joined {formatDate(member.joinedAt)}</p>
               </div>
               {member.role === 'owner' ? (
                 <Badge tone="primary">Owner</Badge>
@@ -69,9 +71,9 @@ export function MemberList({ tripId, tripName, members, currentUserId, isOwner, 
                     setError(null)
                     setTarget(member)
                   }}
-                  className="rounded-full p-2.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                  aria-label={isMe ? 'Leave trip' : `Remove ${member.profile.full_name}`}
-                  title={isMe ? 'Leave trip' : 'Remove from trip'}
+                  className="rounded-full p-3 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 sm:p-2.5"
+                  aria-label={isMe ? `Leave ${noun}` : `Remove ${member.profile.full_name}`}
+                  title={isMe ? `Leave ${noun}` : `Remove from ${noun}`}
                 >
                   {isMe ? <LogOut className="size-5" aria-hidden /> : <UserMinus className="size-5" aria-hidden />}
                 </button>
@@ -88,12 +90,12 @@ export function MemberList({ tripId, tripName, members, currentUserId, isOwner, 
         loading={busy}
         error={error}
         title={leaving ? `Leave ${tripName}?` : `Remove ${target?.profile.full_name ?? ''}?`}
-        confirmLabel={leaving ? 'Leave trip' : 'Remove'}
+        confirmLabel={leaving ? `Leave ${noun}` : 'Remove'}
       >
         <p>
           {leaving
             ? 'You’ll lose access to this trip’s expenses and balances. The owner can invite you again later.'
-            : 'They’ll lose access to this trip. People who have paid for or shared in expenses can’t be removed.'}
+            : `They’ll lose access to this ${noun}. People who have paid for or shared in expenses can’t be removed.`}
         </p>
       </ConfirmDialog>
     </>

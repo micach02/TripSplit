@@ -16,8 +16,9 @@ export function getTripStatus(trip: Pick<Trip, 'status' | 'start_date'>, today: 
   return today < trip.start_date ? 'upcoming' : 'active'
 }
 
+/** Budgets have no end date, so they never end on their own. */
 export function hasTripEnded(trip: Pick<Trip, 'end_date'>, today: string = todayIso()): boolean {
-  return today > trip.end_date
+  return trip.end_date !== null && today > trip.end_date
 }
 
 /** Inclusive number of days: Nov 3–8 → 6. */

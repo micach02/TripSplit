@@ -37,7 +37,7 @@ export function CategoryPicker({ categories, value, onChange, error }: CategoryP
                 'flex min-h-18 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-center transition',
                 selected
                   ? 'bg-blue-50 text-blue-800 ring-2 ring-blue-600'
-                  : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50',
+                  : 'bg-surface text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50',
               )}
             >
               <span className="text-xl leading-none" aria-hidden>

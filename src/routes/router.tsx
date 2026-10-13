@@ -6,7 +6,6 @@ import { RootLayout } from '@/components/layout/RootLayout'
 // Eager on purpose: it must render even when a lazy chunk fails to load.
 import RouteErrorPage from '@/pages/RouteErrorPage'
 import {
-  ActivityPage,
   AddExpensePage,
   CreateTripPage,
   DashboardPage,
@@ -14,6 +13,7 @@ import {
   ForgotPasswordPage,
   InvitePage,
   LoginPage,
+  MySpendingPage,
   NotFoundPage,
   NotificationsPage,
   ProfilePage,
@@ -83,7 +83,9 @@ export const router = createBrowserRouter([
               { path: paths.addExpense, element: <AddExpensePage /> },
               // Shared invite links; signed-out visitors log in or register first, then come back here.
               { path: '/invite/:token', element: <InvitePage /> },
-              { path: paths.activity, element: <ActivityPage /> },
+              { path: paths.spending, element: <MySpendingPage /> },
+              // The old Activity placeholder
+              { path: paths.activity, element: <Navigate to={paths.spending} replace /> },
               { path: paths.notifications, element: <NotificationsPage /> },
               { path: paths.profile, element: <ProfilePage /> },
               { path: paths.settings, element: <SettingsPage /> },

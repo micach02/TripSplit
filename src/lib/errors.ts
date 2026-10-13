@@ -25,6 +25,7 @@ const DATABASE_RULES: Record<string, string> = {
   invitation_not_found: 'This invitation isn’t for your account, or it no longer exists.',
   invitation_not_pending: 'This invitation has already been answered.',
   invitation_expired: 'This invitation has expired. Ask the trip owner to send a new one.',
+  invitation_already_pending: 'This person already has a newer invitation waiting. Share that one instead.',
   invalid_split: 'Use one split method for the whole expense.',
   split_percentage_total: 'Percentages must add up to 100%.',
   split_custom_total: 'The amounts must add up to the total.',

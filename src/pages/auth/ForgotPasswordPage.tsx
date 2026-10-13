@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
   const backToLogin = (
     <Link
       to={paths.login}
-      className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700"
+      className="tap-target inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700"
     >
       <ArrowLeft className="size-4" aria-hidden />
       Back to log in

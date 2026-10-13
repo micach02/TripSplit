@@ -8,9 +8,25 @@
  *   red     → debts, over budget, destructive actions
  *   orange  → warnings (budget thresholds)
  *   slate   → neutral text, borders, surfaces
+ *
+ * Backgrounds: `surface` for cards and panels, `canvas` for the page behind
+ * them. `white` stays white in dark mode, so it is only for things on top of a
+ * fixed colour (text on a brand button, glass on a photo).
  */
 @theme {
   --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --color-surface: #fff;
+  --color-canvas: oklch(98.4% 0.003 247.858);
+
+  /* Fixed in both modes: fills that carry white text, and the shade behind photos */
+  --color-brand-600: oklch(54.6% 0.245 262.881);
+  --color-brand-700: oklch(48.8% 0.243 264.376);
+  --color-brand-800: oklch(42.4% 0.199 265.638);
+  --color-danger-600: oklch(57.7% 0.245 27.325);
+  --color-danger-700: oklch(50.5% 0.213 27.518);
+  --color-danger-800: oklch(44.4% 0.177 26.899);
+  --color-scrim: oklch(12.9% 0.042 264.695);
 
   --animate-toast-in: toast-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-fade-in: fade-in 200ms ease-out;
@@ -65,6 +81,148 @@
     color-scheme: light;
   }
 
+  /*
+   * Dark mode. index.html sets data-theme before the first paint (the saved
+   * choice, or the system setting) and lib/theme.ts keeps it current. The
+   * palette is remapped instead of restyling components: neutrals invert, tints
+   * (50–300) become dark washes and text shades (600–950) become light, so the
+   * same class names read correctly in both modes. 400–500 and the fixed
+   * colours above don't change. Text pairs were checked at 4.5:1 or better.
+   */
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --color-surface: oklch(21.0% 0.020 262.0);
+    --color-canvas: oklch(16.5% 0.018 262.0);
+    --color-slate-50: oklch(23.5% 0.022 262.0);
+    --color-slate-100: oklch(26.5% 0.024 262.0);
+    --color-slate-200: oklch(33.0% 0.026 262.0);
+    --color-slate-300: oklch(42.0% 0.028 262.0);
+    --color-slate-400: oklch(56.0% 0.030 262.0);
+    --color-slate-500: oklch(70.0% 0.028 262.0);
+    --color-slate-600: oklch(76.0% 0.024 262.0);
+    --color-slate-700: oklch(84.0% 0.018 262.0);
+    --color-slate-800: oklch(90.0% 0.012 262.0);
+    --color-slate-900: oklch(95.0% 0.007 262.0);
+    --color-slate-950: oklch(97.5% 0.004 262.0);
+    --color-blue-50: oklch(26.5% 0.050 267.9);
+    --color-blue-100: oklch(30.0% 0.088 265.5);
+    --color-blue-200: oklch(37.0% 0.110 265.6);
+    --color-blue-300: oklch(50.0% 0.194 264.4);
+    --color-blue-600: oklch(70.7% 0.165 254.6);
+    --color-blue-700: oklch(80.9% 0.105 251.8);
+    --color-blue-800: oklch(88.2% 0.059 254.1);
+    --color-blue-900: oklch(93.2% 0.032 255.6);
+    --color-blue-950: oklch(97.0% 0.014 254.6);
+    --color-red-50: oklch(26.5% 0.051 26.0);
+    --color-red-100: oklch(30.0% 0.085 25.7);
+    --color-red-200: oklch(37.0% 0.110 26.9);
+    --color-red-300: oklch(50.0% 0.170 27.5);
+    --color-red-600: oklch(70.4% 0.191 22.2);
+    --color-red-700: oklch(80.8% 0.114 19.6);
+    --color-red-800: oklch(88.5% 0.062 18.3);
+    --color-red-900: oklch(93.6% 0.032 17.7);
+    --color-red-950: oklch(97.1% 0.013 17.4);
+    --color-emerald-50: oklch(26.5% 0.028 172.6);
+    --color-emerald-100: oklch(30.0% 0.046 168.9);
+    --color-emerald-200: oklch(37.0% 0.062 166.9);
+    --color-emerald-300: oklch(50.0% 0.094 165.6);
+    --color-emerald-600: oklch(76.5% 0.177 163.2);
+    --color-emerald-700: oklch(84.5% 0.143 165.0);
+    --color-emerald-800: oklch(90.5% 0.093 164.2);
+    --color-emerald-900: oklch(95.0% 0.052 163.1);
+    --color-emerald-950: oklch(97.9% 0.021 166.1);
+    --color-orange-50: oklch(26.5% 0.043 36.3);
+    --color-orange-100: oklch(30.0% 0.074 38.2);
+    --color-orange-200: oklch(37.0% 0.102 37.3);
+    --color-orange-300: oklch(50.0% 0.156 38.4);
+    --color-orange-600: oklch(75.0% 0.183 55.9);
+    --color-orange-700: oklch(83.7% 0.128 66.3);
+    --color-orange-800: oklch(90.1% 0.076 70.7);
+    --color-orange-900: oklch(95.4% 0.038 75.2);
+    --color-orange-950: oklch(98.0% 0.016 73.7);
+    --color-violet-50: oklch(26.5% 0.070 291.1);
+    --color-violet-100: oklch(30.0% 0.090 293.7);
+    --color-violet-200: oklch(37.0% 0.110 292.8);
+    --color-violet-300: oklch(50.0% 0.216 292.6);
+    --color-violet-600: oklch(70.2% 0.183 293.5);
+    --color-violet-700: oklch(81.1% 0.111 293.6);
+    --color-violet-800: oklch(89.4% 0.057 293.3);
+    --color-violet-900: oklch(94.3% 0.029 294.6);
+    --color-violet-950: oklch(96.9% 0.016 293.8);
+    --color-sky-50: oklch(26.5% 0.036 243.2);
+    --color-sky-100: oklch(30.0% 0.054 240.9);
+    --color-sky-200: oklch(37.0% 0.072 240.8);
+    --color-sky-300: oklch(50.0% 0.107 242.7);
+    --color-sky-600: oklch(74.6% 0.160 232.7);
+    --color-sky-700: oklch(82.8% 0.111 230.3);
+    --color-sky-800: oklch(90.1% 0.058 230.9);
+    --color-sky-900: oklch(95.1% 0.026 236.8);
+    --color-sky-950: oklch(97.7% 0.013 236.6);
+    --color-amber-50: oklch(26.5% 0.042 45.6);
+    --color-amber-100: oklch(30.0% 0.067 45.9);
+    --color-amber-200: oklch(37.0% 0.089 46.2);
+    --color-amber-300: oklch(50.0% 0.130 49.0);
+    --color-amber-600: oklch(82.8% 0.189 84.4);
+    --color-amber-700: oklch(87.9% 0.169 91.6);
+    --color-amber-800: oklch(92.4% 0.120 95.7);
+    --color-amber-900: oklch(96.2% 0.059 95.6);
+    --color-amber-950: oklch(98.7% 0.022 95.3);
+    --color-teal-50: oklch(26.5% 0.025 192.5);
+    --color-teal-100: oklch(30.0% 0.038 188.4);
+    --color-teal-200: oklch(37.0% 0.051 188.2);
+    --color-teal-300: oklch(50.0% 0.077 186.4);
+    --color-teal-600: oklch(77.7% 0.152 181.9);
+    --color-teal-700: oklch(85.5% 0.138 181.1);
+    --color-teal-800: oklch(91.0% 0.096 180.4);
+    --color-teal-900: oklch(95.3% 0.051 180.8);
+    --color-teal-950: oklch(98.4% 0.014 180.7);
+    --color-rose-50: oklch(26.5% 0.058 12.1);
+    --color-rose-100: oklch(30.0% 0.090 10.3);
+    --color-rose-200: oklch(37.0% 0.110 13.7);
+    --color-rose-300: oklch(50.0% 0.178 16.9);
+    --color-rose-600: oklch(71.2% 0.194 13.4);
+    --color-rose-700: oklch(81.0% 0.117 11.6);
+    --color-rose-800: oklch(89.2% 0.058 10.0);
+    --color-rose-900: oklch(94.1% 0.030 12.6);
+    --color-rose-950: oklch(96.9% 0.015 12.4);
+    --color-indigo-50: oklch(26.5% 0.050 281.3);
+    --color-indigo-100: oklch(30.0% 0.086 278.7);
+    --color-indigo-200: oklch(37.0% 0.110 277.4);
+    --color-indigo-300: oklch(50.0% 0.192 277.0);
+    --color-indigo-600: oklch(67.3% 0.182 276.9);
+    --color-indigo-700: oklch(78.5% 0.115 274.7);
+    --color-indigo-800: oklch(87.0% 0.065 274.0);
+    --color-indigo-900: oklch(93.0% 0.034 272.8);
+    --color-indigo-950: oklch(96.2% 0.018 272.3);
+    --color-cyan-50: oklch(26.5% 0.031 229.7);
+    --color-cyan-100: oklch(30.0% 0.042 227.4);
+    --color-cyan-200: oklch(37.0% 0.055 224.3);
+    --color-cyan-300: oklch(50.0% 0.084 223.1);
+    --color-cyan-600: oklch(78.9% 0.154 211.5);
+    --color-cyan-700: oklch(86.5% 0.127 207.1);
+    --color-cyan-800: oklch(91.7% 0.080 205.0);
+    --color-cyan-900: oklch(95.6% 0.045 203.4);
+    --color-cyan-950: oklch(98.4% 0.019 200.9);
+    --color-pink-50: oklch(26.5% 0.060 3.9);
+    --color-pink-100: oklch(30.0% 0.090 2.4);
+    --color-pink-200: oklch(37.0% 0.110 3.8);
+    --color-pink-300: oklch(50.0% 0.178 4.0);
+    --color-pink-600: oklch(71.8% 0.202 349.8);
+    --color-pink-700: oklch(82.3% 0.120 346.0);
+    --color-pink-800: oklch(89.9% 0.061 343.2);
+    --color-pink-900: oklch(94.8% 0.028 342.3);
+    --color-pink-950: oklch(97.1% 0.014 343.2);
+    --color-fuchsia-50: oklch(26.5% 0.070 325.7);
+    --color-fuchsia-100: oklch(30.0% 0.090 325.6);
+    --color-fuchsia-200: oklch(37.0% 0.110 324.6);
+    --color-fuchsia-300: oklch(50.0% 0.202 323.9);
+    --color-fuchsia-600: oklch(74.0% 0.238 322.2);
+    --color-fuchsia-700: oklch(83.3% 0.145 321.4);
+    --color-fuchsia-800: oklch(90.3% 0.076 319.6);
+    --color-fuchsia-900: oklch(95.2% 0.037 318.9);
+    --color-fuchsia-950: oklch(97.7% 0.017 320.1);
+  }
+
   html {
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
@@ -72,7 +230,7 @@
   }
 
   body {
-    background-color: var(--color-slate-50);
+    background-color: var(--color-canvas);
     color: var(--color-slate-900);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -98,6 +256,16 @@
   input[type='date']::-webkit-calendar-picker-indicator {
     opacity: 0.55;
   }
+}
+
+/*
+ * Small text actions ("See all", "Forgot password?") get a ~44px-tall hit area
+ * without moving anything around them: padding grows the target, a matching
+ * negative margin gives the space back.
+ */
+@utility tap-target {
+  padding-block: 0.75rem;
+  margin-block: -0.75rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

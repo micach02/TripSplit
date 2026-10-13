@@ -1,3 +1,27 @@
+/** File-picker filter: any photo. Every upload is re-encoded as JPEG first. */
+export const IMAGE_ACCEPT = 'image/*'
+
+/**
+ * Checks a picked file is a photo this browser can open, before it's used.
+ * Phone formats such as iPhone HEIC work wherever the browser can decode them
+ * (Safari); elsewhere people get a clear message rather than a failed upload.
+ * Returns an error message, or null when the file is fine.
+ */
+export async function checkImageFile(file: File, maxBytes: number): Promise<string | null> {
+  const looksLikeImage = file.type.startsWith('image/') || /\.(heic|heif)$/i.test(file.name)
+  if (!looksLikeImage) return 'Choose a photo (JPG, PNG, WEBP or HEIC).'
+  if (file.size > maxBytes) {
+    return `That photo is too large. Choose one under ${Math.round(maxBytes / (1024 * 1024))} MB.`
+  }
+  try {
+    const bitmap = await createImageBitmap(file)
+    bitmap.close()
+    return null
+  } catch {
+    return 'This browser can’t open that photo. Choose a JPG, PNG or WEBP photo instead.'
+  }
+}
+
 /**
  * Downscales an image so its longest side is at most `maxSize` px and
  * re-encodes it as JPEG — phone photos shrink from megabytes to ~50 KB.

@@ -6,9 +6,9 @@ import { tripPath } from '@/routes/paths'
 import type { DashboardTrip } from '@/services/dashboardService'
 import { budgetTone, getBudgetUsage } from '@/utils/calculations/budgetCalculator'
 import { formatMoney } from '@/utils/calculations/money'
-import { formatDateRange } from '@/utils/format'
+import { timeframe } from '@/utils/tripKind'
 
-/** One trip with its spend against budget; links to the trip. */
+/** One trip or monthly budget with its spend against budget; links to it. */
 export function TripBudgetRow({ trip }: { trip: DashboardTrip }) {
   const usage = getBudgetUsage(trip.spent, trip.budget)
   const tone = budgetTone(usage)
@@ -29,7 +29,11 @@ export function TripBudgetRow({ trip }: { trip: DashboardTrip }) {
                 <span aria-hidden>·</span>
               </>
             )}
-            <span className="shrink-0">{formatDateRange(trip.start_date, trip.end_date)}</span>
+            <span className="shrink-0">
+              {trip.kind === 'budget'
+                ? 'This month'
+                : timeframe({ kind: trip.kind, startDate: trip.start_date, endDate: trip.end_date })}
+            </span>
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -53,7 +57,7 @@ export function TripBudgetRow({ trip }: { trip: DashboardTrip }) {
           <p
             className={cn(
               'mt-1.5 text-xs font-semibold tabular-nums',
-              tone === 'danger' ? 'text-red-600' : tone === 'warning' ? 'text-orange-600' : 'text-slate-500',
+              tone === 'danger' ? 'text-red-600' : tone === 'warning' ? 'text-orange-700' : 'text-slate-500',
             )}
           >
             {usage.overBy > 0

@@ -32,7 +32,15 @@ export function TripCover({ tripId, name, url, className, size = 'card' }: TripC
   return (
     <div className={cn('relative overflow-hidden bg-slate-200', className)}>
       {url ? (
-        <img src={url} alt="" className="size-full object-cover" loading="lazy" decoding="async" />
+        // The banner is the biggest thing on a trip page: load it straight away, not lazily.
+        <img
+          src={url}
+          alt=""
+          className="size-full object-cover"
+          loading={size === 'banner' ? 'eager' : 'lazy'}
+          fetchPriority={size === 'banner' ? 'high' : 'auto'}
+          decoding="async"
+        />
       ) : (
         <div
           className={cn('flex size-full items-center justify-center bg-linear-to-br text-white', gradientFor(tripId))}

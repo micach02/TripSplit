@@ -14,7 +14,7 @@ function ExpensePreview() {
     { initials: 'AT', className: 'bg-amber-100 text-amber-800' },
   ]
   return (
-    <div aria-hidden className="mt-10 max-w-sm rounded-2xl bg-white p-5 text-slate-900 shadow-2xl shadow-blue-950/25">
+    <div aria-hidden className="mt-10 max-w-sm rounded-2xl bg-surface p-5 text-slate-900 shadow-2xl shadow-blue-950/25">
       <div className="flex items-center gap-3">
         <span className="flex size-11 items-center justify-center rounded-xl bg-orange-50 text-xl">🍜</span>
         <div className="min-w-0 flex-1">
@@ -28,13 +28,13 @@ function ExpensePreview() {
           {travelers.map((traveler) => (
             <span
               key={traveler.initials}
-              className={`flex size-9 items-center justify-center rounded-full text-xs font-bold ring-2 ring-white ${traveler.className}`}
+              className={`flex size-9 items-center justify-center rounded-full text-xs font-bold ring-2 ring-surface ${traveler.className}`}
             >
               {traveler.initials}
             </span>
           ))}
         </div>
-        <p className="text-sm font-semibold text-emerald-600">{formatMoney(62500, 'PHP')} each</p>
+        <p className="text-sm font-semibold text-emerald-700">{formatMoney(62500, 'PHP')} each</p>
       </div>
       <div className="mt-4">
         <div className="flex justify-between text-xs font-semibold text-slate-500">
@@ -51,8 +51,8 @@ function ExpensePreview() {
 
 export function AuthLayout() {
   return (
-    <div className="flex min-h-dvh bg-white">
-      <aside className="relative hidden w-[44%] max-w-2xl flex-col justify-between overflow-hidden bg-linear-to-br from-blue-700 via-blue-600 to-sky-500 p-10 text-white lg:flex xl:p-14">
+    <div className="flex min-h-dvh bg-surface">
+      <aside className="relative hidden w-[44%] max-w-2xl flex-col justify-between overflow-hidden bg-linear-to-br from-brand-700 via-brand-600 to-sky-500 p-10 text-white lg:flex xl:p-14">
         <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 size-96 rounded-full bg-white/10" />
         <div aria-hidden className="pointer-events-none absolute -bottom-32 -left-20 size-80 rounded-full bg-sky-300/20" />
 
@@ -68,13 +68,13 @@ export function AuthLayout() {
             <br />
             Split smarter.
           </h2>
-          <p className="mt-5 max-w-sm text-lg text-blue-100">
+          <p className="mt-5 max-w-sm text-lg text-white/90">
             Your group&apos;s travel budget, simplified. Log an expense in seconds — TripSplit works out who owes whom.
           </p>
           <ExpensePreview />
         </div>
 
-        <p className="relative text-sm text-blue-100/80">© {new Date().getFullYear()} TripSplit</p>
+        <p className="relative text-sm text-white/75">© {new Date().getFullYear()} TripSplit</p>
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col">

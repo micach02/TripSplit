@@ -438,9 +438,10 @@ begin
       $$ select id from tripsplit.trip_invitations where id = '70000000-0000-4000-8000-000000000001' $$,
       'invitees can see their own invitation'
     );
-    tap := tap || is_empty(
+    tap := tap || throws_ok(
       $$ update tripsplit.trip_invitations set status = 'accepted'
          where id = '70000000-0000-4000-8000-000000000001' returning id $$,
+      '42501', null,
       'invitees cannot accept by editing the invitation row'
     );
 

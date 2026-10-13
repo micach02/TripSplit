@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   tripsplit: {
     Tables: {
@@ -169,6 +169,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "expense_splits_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "my_expense_shares"
+            referencedColumns: ["expense_id"]
+          },
+          {
             foreignKeyName: "expense_splits_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -192,7 +199,12 @@ export type Database = {
           notes: string | null
           paid_by: string
           participant_ids: string[]
+          payment_method:
+            | Database["tripsplit"]["Enums"]["payment_method"]
+            | null
           receipt_url: string | null
+          recurring_id: string | null
+          recurring_period: string | null
           trip_id: string
           updated_at: string
         }
@@ -210,7 +222,12 @@ export type Database = {
           notes?: string | null
           paid_by: string
           participant_ids?: string[]
+          payment_method?:
+            | Database["tripsplit"]["Enums"]["payment_method"]
+            | null
           receipt_url?: string | null
+          recurring_id?: string | null
+          recurring_period?: string | null
           trip_id: string
           updated_at?: string
         }
@@ -228,7 +245,12 @@ export type Database = {
           notes?: string | null
           paid_by?: string
           participant_ids?: string[]
+          payment_method?:
+            | Database["tripsplit"]["Enums"]["payment_method"]
+            | null
           receipt_url?: string | null
+          recurring_id?: string | null
+          recurring_period?: string | null
           trip_id?: string
           updated_at?: string
         }
@@ -262,6 +284,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "expenses_recurring_id_fkey"
+            columns: ["recurring_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_expenses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "expenses_trip_id_fkey"
             columns: ["trip_id"]
             isOneToOne: false
@@ -277,10 +306,59 @@ export type Database = {
           },
         ]
       }
+      incomes: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          received_on: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: string
+          id?: string
+          notes?: string | null
+          received_on?: string
+          source: string
+          user_id?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          received_on?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incomes_currency_fkey"
+            columns: ["currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "incomes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
+          default_trip_id: string | null
           email: string
           full_name: string
           id: string
@@ -290,6 +368,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          default_trip_id?: string | null
           email: string
           full_name: string
           id: string
@@ -299,6 +378,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          default_trip_id?: string | null
           email?: string
           full_name?: string
           id?: string
@@ -307,11 +387,124 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "profiles_default_trip_id_fkey"
+            columns: ["default_trip_id"]
+            isOneToOne: false
+            referencedRelation: "trip_totals"
+            referencedColumns: ["trip_id"]
+          },
+          {
+            foreignKeyName: "profiles_default_trip_id_fkey"
+            columns: ["default_trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "profiles_preferred_currency_fkey"
             columns: ["preferred_currency"]
             isOneToOne: false
             referencedRelation: "currencies"
             referencedColumns: ["code"]
+          },
+        ]
+      }
+      recurring_expenses: {
+        Row: {
+          active: boolean
+          amount: number
+          category_id: string
+          created_at: string
+          created_by: string | null
+          day_of_month: number
+          description: string
+          id: string
+          last_period: string | null
+          mode: Database["tripsplit"]["Enums"]["recurring_mode"]
+          paid_by: string
+          participant_ids: string[]
+          payment_method:
+            | Database["tripsplit"]["Enums"]["payment_method"]
+            | null
+          starts_on: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount: number
+          category_id: string
+          created_at?: string
+          created_by?: string | null
+          day_of_month: number
+          description: string
+          id?: string
+          last_period?: string | null
+          mode?: Database["tripsplit"]["Enums"]["recurring_mode"]
+          paid_by: string
+          participant_ids: string[]
+          payment_method?:
+            | Database["tripsplit"]["Enums"]["payment_method"]
+            | null
+          starts_on?: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          category_id?: string
+          created_at?: string
+          created_by?: string | null
+          day_of_month?: number
+          description?: string
+          id?: string
+          last_period?: string | null
+          mode?: Database["tripsplit"]["Enums"]["recurring_mode"]
+          paid_by?: string
+          participant_ids?: string[]
+          payment_method?:
+            | Database["tripsplit"]["Enums"]["payment_method"]
+            | null
+          starts_on?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_expenses_category_fkey"
+            columns: ["category_id", "trip_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id", "trip_id"]
+          },
+          {
+            foreignKeyName: "recurring_expenses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_expenses_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trip_totals"
+            referencedColumns: ["trip_id"]
+          },
+          {
+            foreignKeyName: "recurring_expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -512,10 +705,12 @@ export type Database = {
           currency: string
           description: string | null
           destination: string | null
-          end_date: string
+          end_date: string | null
           id: string
+          kind: Database["tripsplit"]["Enums"]["trip_kind"]
           name: string
           owner_id: string
+          rollover: boolean
           start_date: string
           status: Database["tripsplit"]["Enums"]["trip_status"]
           updated_at: string
@@ -527,10 +722,12 @@ export type Database = {
           currency?: string
           description?: string | null
           destination?: string | null
-          end_date: string
+          end_date?: string | null
           id?: string
+          kind?: Database["tripsplit"]["Enums"]["trip_kind"]
           name: string
           owner_id?: string
+          rollover?: boolean
           start_date: string
           status?: Database["tripsplit"]["Enums"]["trip_status"]
           updated_at?: string
@@ -542,10 +739,12 @@ export type Database = {
           currency?: string
           description?: string | null
           destination?: string | null
-          end_date?: string
+          end_date?: string | null
           id?: string
+          kind?: Database["tripsplit"]["Enums"]["trip_kind"]
           name?: string
           owner_id?: string
+          rollover?: boolean
           start_date?: string
           status?: Database["tripsplit"]["Enums"]["trip_status"]
           updated_at?: string
@@ -569,6 +768,95 @@ export type Database = {
       }
     }
     Views: {
+      my_expense_shares: {
+        Row: {
+          category_color: string | null
+          category_icon: string | null
+          category_id: string | null
+          category_name: string | null
+          description: string | null
+          expense_date: string | null
+          expense_id: string | null
+          my_share: number | null
+          paid_by: string | null
+          payment_method:
+            | Database["tripsplit"]["Enums"]["payment_method"]
+            | null
+          total: number | null
+          trip_currency: string | null
+          trip_id: string | null
+          trip_kind: Database["tripsplit"]["Enums"]["trip_kind"] | null
+          trip_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_category_fkey"
+            columns: ["category_id", "trip_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id", "trip_id"]
+          },
+          {
+            foreignKeyName: "expenses_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trip_totals"
+            referencedColumns: ["trip_id"]
+          },
+          {
+            foreignKeyName: "expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trips_currency_fkey"
+            columns: ["trip_currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      trip_category_month_totals: {
+        Row: {
+          category_id: string | null
+          month: string | null
+          total_spent: number | null
+          trip_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_category_fkey"
+            columns: ["category_id", "trip_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id", "trip_id"]
+          },
+          {
+            foreignKeyName: "expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trip_totals"
+            referencedColumns: ["trip_id"]
+          },
+          {
+            foreignKeyName: "expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_member_balances: {
         Row: {
           net: number | null
@@ -603,6 +891,30 @@ export type Database = {
           },
         ]
       }
+      trip_month_totals: {
+        Row: {
+          expense_count: number | null
+          month: string | null
+          total_spent: number | null
+          trip_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trip_totals"
+            referencedColumns: ["trip_id"]
+          },
+          {
+            foreignKeyName: "expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_totals: {
         Row: {
           expense_count: number | null
@@ -629,6 +941,7 @@ export type Database = {
         Returns: {
           avatar_url: string | null
           created_at: string
+          default_trip_id: string | null
           email: string
           full_name: string
           id: string
@@ -654,6 +967,7 @@ export type Database = {
           start_date: string
           status: string
           trip_id: string
+          trip_kind: Database["tripsplit"]["Enums"]["trip_kind"]
           trip_name: string
         }[]
       }
@@ -669,19 +983,54 @@ export type Database = {
           invited_by_name: string
           start_date: string
           trip_id: string
+          trip_kind: Database["tripsplit"]["Enums"]["trip_kind"]
           trip_name: string
         }[]
+      }
+      post_due_recurring: { Args: { p_trip_id?: string }; Returns: number }
+      renew_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: {
+          created_at: string
+          expires_at: string
+          id: string
+          invited_by: string
+          invited_email: string
+          invited_name: string | null
+          status: Database["tripsplit"]["Enums"]["invitation_status"]
+          token: string
+          trip_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "trip_invitations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       save_expense: {
         Args: { p_expense: Json; p_splits: Json }
         Returns: string
       }
+      skip_recurring: {
+        Args: { p_period: string; p_recurring_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       invitation_status: "pending" | "accepted" | "declined" | "expired"
       member_role: "owner" | "member"
-      payment_method: "cash" | "bank_transfer" | "gcash" | "paypal" | "other"
+      payment_method:
+        | "cash"
+        | "bank_transfer"
+        | "gcash"
+        | "paypal"
+        | "other"
+        | "maya"
+        | "card"
+      recurring_mode: "auto" | "remind"
       split_type: "equal" | "custom" | "percentage" | "shares"
+      trip_kind: "trip" | "budget"
       trip_status: "upcoming" | "active" | "completed"
     }
     CompositeTypes: {
@@ -812,8 +1161,18 @@ export const Constants = {
     Enums: {
       invitation_status: ["pending", "accepted", "declined", "expired"],
       member_role: ["owner", "member"],
-      payment_method: ["cash", "bank_transfer", "gcash", "paypal", "other"],
+      payment_method: [
+        "cash",
+        "bank_transfer",
+        "gcash",
+        "paypal",
+        "other",
+        "maya",
+        "card",
+      ],
+      recurring_mode: ["auto", "remind"],
       split_type: ["equal", "custom", "percentage", "shares"],
+      trip_kind: ["trip", "budget"],
       trip_status: ["upcoming", "active", "completed"],
     },
   },

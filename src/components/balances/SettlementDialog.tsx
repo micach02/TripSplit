@@ -11,6 +11,7 @@ import { cn } from '@/lib/cn'
 import { getCurrency } from '@/lib/currencies'
 import { getErrorMessage } from '@/lib/errors'
 import { PAYMENT_METHOD_LABELS, recordSettlement } from '@/services/settlementService'
+import { PAYMENT_METHODS } from '@/utils/paymentMethods'
 import type { PaymentMethod } from '@/types/models'
 import { parseMoneyInput, toDecimalString } from '@/utils/calculations/money'
 import { todayIso } from '@/utils/tripStatus'
@@ -30,7 +31,7 @@ interface SettlementDialogProps {
   prefill: SettlementPrefill | null
 }
 
-const METHODS = Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[]
+const METHODS = PAYMENT_METHODS
 
 function SettlementForm({ onClose, onSaved, context, prefill }: Omit<SettlementDialogProps, 'open'>) {
   const { trip, members, money } = context
@@ -107,7 +108,7 @@ function SettlementForm({ onClose, onSaved, context, prefill }: Omit<SettlementD
         hint={
           money.converted && parsed?.ok && parsed.minor > 0
             ? `≈ ${money.format(parsed.minor)} · settlements are recorded in ${trip.currency}`
-            : `Recorded in the trip currency (${trip.currency}).`
+            : `Recorded in ${trip.currency}, the currency everything here is tracked in.`
         }
       />
 
@@ -122,7 +123,7 @@ function SettlementForm({ onClose, onSaved, context, prefill }: Omit<SettlementD
               onClick={() => setMethod(value)}
               className={cn(
                 'min-h-11 rounded-full px-4 text-sm font-semibold transition',
-                method === value ? 'bg-blue-600 text-white' : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50',
+                method === value ? 'bg-brand-600 text-white' : 'bg-surface text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50',
               )}
             >
               {PAYMENT_METHOD_LABELS[value]}

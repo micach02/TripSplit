@@ -1,23 +1,49 @@
 /**
- * Chart tokens — the dataviz reference palette, validated for this app's white
- * card surface (scripts/validate_palette.js: slots 1–5 pass every gate; slots
- * 3–5 are below 3:1 contrast, so every chart ships a visible legend/table).
- * Categorical hues are assigned in this fixed order, never cycled or generated.
+ * Chart tokens — the dataviz reference palette. Categorical hues are assigned
+ * in this fixed order, never cycled or generated. Read them through
+ * useChartColors(), which picks the set for the current light/dark mode.
  */
-export const SERIES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'] as const
+export interface ChartColors {
+  series: readonly string[]
+  /** "Other" / de-emphasis — neutral, never a hue. */
+  neutral: string
+  /** The card behind the chart: gaps between slices and rings around dots */
+  surface: string
+  grid: string
+  baseline: string
+  inkSecondary: string
+  /** Axis tick text */
+  axisTick: { fill: string; fontSize: number }
+}
 
-/** "Other" / de-emphasis — neutral, never a hue. */
-export const NEUTRAL = '#898781'
+/**
+ * Validated against the white card (scripts/validate_palette.js: slots 1–5 pass
+ * every gate; slots 3–5 are below 3:1 contrast, so every chart ships a visible
+ * legend/table).
+ */
+export const LIGHT_CHART_COLORS: ChartColors = {
+  series: ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'],
+  neutral: '#898781',
+  surface: '#ffffff',
+  grid: '#e8e7e1',
+  baseline: '#c3c2b7',
+  inkSecondary: '#52514e',
+  axisTick: { fill: '#898781', fontSize: 12 },
+}
 
-export const SURFACE = '#ffffff'
-export const GRID = '#e8e7e1'
-export const BASELINE = '#c3c2b7'
-export const INK = '#0b0b0b'
-export const INK_SECONDARY = '#52514e'
-export const INK_MUTED = '#898781'
-
-/** Axis tick text */
-export const AXIS_TICK = { fill: INK_MUTED, fontSize: 12 } as const
+/**
+ * The same eight hues stepped for the dark card (#131822): every slot passes
+ * every gate there, all at 3:1 or better.
+ */
+export const DARK_CHART_COLORS: ChartColors = {
+  series: ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767'],
+  neutral: '#898781',
+  surface: '#131822',
+  grid: '#262d39',
+  baseline: '#3a4250',
+  inkSecondary: '#c3c2b7',
+  axisTick: { fill: '#9a9da6', fontSize: 12 },
+}
 
 /**
  * A round axis maximum and evenly spaced round ticks covering `value`:

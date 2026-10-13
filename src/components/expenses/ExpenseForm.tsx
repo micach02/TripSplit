@@ -1,5 +1,6 @@
-import { useId, useState, type FormEvent } from 'react'
-import { CircleAlert, X } from 'lucide-react'
+import { useId, useMemo, useState, type FormEvent } from 'react'
+import { addDays, format, parseISO } from 'date-fns'
+import { Check, CircleAlert, ScanText, Sparkles, X } from 'lucide-react'
 import { CategoryPicker } from '@/components/expenses/CategoryPicker'
 import { ReceiptPicker } from '@/components/expenses/ReceiptPicker'
 import { SplitEditor } from '@/components/expenses/SplitEditor'
@@ -13,6 +14,7 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { cn } from '@/lib/cn'
 import { CURRENCY_CODES, getCurrency } from '@/lib/currencies'
 import { getErrorMessage } from '@/lib/errors'
+import { isOfflineError } from '@/lib/offlineCache'
 import { exchangeRates } from '@/services/exchangeRates'
 import {
   applyReceiptChange,
@@ -21,8 +23,9 @@ import {
   type ReceiptChange,
 } from '@/services/expenseService'
 import { RECEIPT_MAX_BYTES } from '@/services/storageService'
+import { queueExpense } from '@/services/syncService'
 import type { TripMemberWithProfile } from '@/services/tripService'
-import type { Category, Trip } from '@/types/models'
+import type { Category, PaymentMethod, Trip } from '@/types/models'
 import {
   calculateSplits,
   defaultSplitValues,
@@ -31,7 +34,11 @@ import {
 } from '@/utils/calculations/expenseSplit'
 import { convertMinor, formatMoney, parseMoneyInput, toDecimalString, toMinor } from '@/utils/calculations/money'
 import { formatDate } from '@/utils/format'
+import { splitValueText } from '@/utils/expenseTemplates'
 import { prepareReceiptImage } from '@/utils/image'
+import { PAYMENT_METHOD_LABELS, PAYMENT_METHODS } from '@/utils/paymentMethods'
+import type { ReceiptGuess } from '@/utils/receiptParser'
+import { buildSuggestions, frequentCategoryIds, matchSuggestions, type PastExpense, type Suggestion } from '@/utils/suggestions'
 import { todayIso } from '@/utils/tripStatus'
 import { collectErrors, type FieldErrors } from '@/utils/validation'
 
@@ -42,9 +49,33 @@ interface ExpenseFormProps {
   currentUserId: string
   /** Present when editing */
   expense?: ExpenseWithSplits
-  /** `receiptFailed`: the expense saved, but the receipt change didn't */
-  onSaved: (expenseId: string, result: { receiptFailed: boolean }) => void
+  /** Prefills a new expense: "Add again", or a recurring reminder */
+  template?: ExpenseTemplate
+  /** Your past expenses here (newest first): suggestions and category order */
+  history?: PastExpense[]
+  /** `receiptFailed`: the expense saved, but the receipt change didn't. `queued`: saved on this device to sync later. */
+  onSaved: (expenseId: string, result: { receiptFailed: boolean; queued: boolean }) => void
   onCancel: () => void
+  /** Quick add: lets you switch to another budget or trip */
+  onChangeTrip?: () => void
+}
+
+export interface ExpenseTemplate {
+  description: string
+  categoryId: string
+  /** Decimal string in `currency` */
+  amount: string
+  currency: string
+  exchangeRate?: string
+  paymentMethod: PaymentMethod | null
+  paidBy?: string
+  participants?: string[]
+  method?: SplitMethod
+  values?: Record<string, string>
+  expenseDate?: string
+  notes?: string
+  recurringId?: string
+  recurringMonth?: string
 }
 
 interface FormState {
@@ -59,6 +90,7 @@ interface FormState {
   values: Record<string, string>
   expenseDate: string
   notes: string
+  paymentMethod: PaymentMethod | ''
 }
 
 type Field = 'amount' | 'rate' | 'description' | 'category' | 'paidBy' | 'split'
@@ -73,13 +105,26 @@ const METHOD_OPTIONS = (Object.keys(SPLIT_METHOD_LABELS) as SplitMethod[]).map((
   label: SPLIT_METHOD_LABELS[value],
 }))
 
-function splitValueText(method: SplitMethod, value: number | null, currency: string): string {
-  if (value === null || method === 'equal') return ''
-  if (method === 'custom') return toDecimalString(toMinor(value, currency), currency)
-  return String(value)
-}
-
-function initialState({ trip, members, currentUserId, expense }: ExpenseFormProps): FormState {
+function initialState({ trip, members, currentUserId, expense, template }: ExpenseFormProps): FormState {
+  const me = members.some((m) => m.userId === currentUserId) ? currentUserId : (members[0]?.userId ?? '')
+  const memberIds = new Set(members.map((m) => m.userId))
+  if (!expense && template) {
+    const participants = (template.participants ?? []).filter((id) => memberIds.has(id))
+    return {
+      amount: template.amount,
+      currency: template.currency,
+      rate: template.currency === trip.currency ? '' : (template.exchangeRate ?? ''),
+      description: template.description,
+      categoryId: template.categoryId,
+      paidBy: template.paidBy && memberIds.has(template.paidBy) ? template.paidBy : me,
+      participants: participants.length ? participants : members.map((m) => m.userId),
+      method: participants.length ? (template.method ?? 'equal') : 'equal',
+      values: participants.length ? (template.values ?? {}) : {},
+      expenseDate: template.expenseDate ?? todayIso(),
+      notes: template.notes ?? '',
+      paymentMethod: template.paymentMethod ?? '',
+    }
+  }
   if (!expense) {
     return {
       amount: '',
@@ -87,12 +132,13 @@ function initialState({ trip, members, currentUserId, expense }: ExpenseFormProp
       rate: '',
       description: '',
       categoryId: '',
-      paidBy: members.some((m) => m.userId === currentUserId) ? currentUserId : (members[0]?.userId ?? ''),
+      paidBy: me,
       participants: members.map((m) => m.userId),
       method: 'equal',
       values: {},
       expenseDate: todayIso(),
       notes: '',
+      paymentMethod: '',
     }
   }
   const method = expense.expense_splits[0]?.split_type ?? 'equal'
@@ -110,8 +156,17 @@ function initialState({ trip, members, currentUserId, expense }: ExpenseFormProp
     ),
     expenseDate: expense.expense_date,
     notes: expense.notes ?? '',
+    paymentMethod: expense.payment_method ?? '',
   }
 }
+
+type ScanState =
+  | { status: 'idle' }
+  | { status: 'reading'; progress: number }
+  | { status: 'done'; guess: ReceiptGuess }
+  | { status: 'failed' }
+
+const dayBefore = (date: string) => format(addDays(parseISO(date), -1), 'yyyy-MM-dd')
 
 function safeConvert(minor: number, from: string, to: string, rate: string): number {
   try {
@@ -122,7 +177,7 @@ function safeConvert(minor: number, from: string, to: string, rate: string): num
 }
 
 export function ExpenseForm(props: ExpenseFormProps) {
-  const { trip, members, categories, currentUserId, expense, onSaved, onCancel } = props
+  const { trip, members, categories, currentUserId, expense, template, history, onSaved, onCancel, onChangeTrip } = props
   const [state, setState] = useState<FormState>(() => initialState(props))
   const [errors, setErrors] = useState<FieldErrors<Field>>({})
   const [formError, setFormError] = useState<string | null>(null)
@@ -132,7 +187,19 @@ export function ExpenseForm(props: ExpenseFormProps) {
   const [rateTouched, setRateTouched] = useState(Boolean(expense))
   const [rateLookup, setRateLookup] = useState<RateLookup>({ status: 'idle' })
   const [receipt, setReceipt] = useState<ReceiptChange>({ kind: 'keep' })
+  const [scan, setScan] = useState<ScanState>({ status: 'idle' })
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  // A fresh id for a new expense: offline saves sync with it, exactly once.
+  const [clientId] = useState(() => crypto.randomUUID())
   const amountId = useId()
+
+  // Quick entry: your own past expenses here
+  const suggestions = useMemo(() => (history ? buildSuggestions(history) : []), [history])
+  const orderedCategories = useMemo(() => {
+    const frequent = history ? frequentCategoryIds(history) : []
+    const rank = (id: string) => (frequent.includes(id) ? frequent.indexOf(id) : frequent.length)
+    return [...categories].sort((a, b) => rank(a.id) - rank(b.id))
+  }, [categories, history])
 
   const tripCurrency = trip.currency
   const foreign = state.currency !== tripCurrency
@@ -254,7 +321,50 @@ export function ExpenseForm(props: ExpenseFormProps) {
     )
   }
 
+  const matches = !expense && showSuggestions ? matchSuggestions(state.description, suggestions) : []
+
+  function applySuggestion(suggestion: Suggestion) {
+    setShowSuggestions(false)
+    const knownCategory = categories.some((category) => category.id === suggestion.categoryId)
+    update({
+      description: suggestion.description,
+      ...(knownCategory ? { categoryId: suggestion.categoryId } : {}),
+      // Keep an amount you've already typed
+      ...(state.amount.trim()
+        ? {}
+        : { amount: toDecimalString(toMinor(Number(suggestion.amount), suggestion.currency), suggestion.currency) }),
+      ...(state.amount.trim() || suggestion.currency === state.currency ? {} : { currency: suggestion.currency }),
+      paymentMethod: (suggestion.paymentMethod as PaymentMethod | null) ?? state.paymentMethod,
+    })
+  }
+
+  async function scanReceipt(file: File) {
+    setScan({ status: 'reading', progress: 0 })
+    try {
+      const { readReceipt } = await import('@/lib/receiptOcr')
+      const guess = await readReceipt(file, (progress) => setScan({ status: 'reading', progress }))
+      setScan(guess.amount || guess.date || guess.merchant ? { status: 'done', guess } : { status: 'failed' })
+    } catch (error) {
+      if (import.meta.env.DEV) console.error('[TripSplit] receipt scan', error)
+      setScan({ status: 'failed' })
+    }
+  }
+
+  function applyScan(guess: ReceiptGuess) {
+    const changes: Partial<FormState> = {}
+    if (guess.amount) {
+      changes.amount = guess.amount
+      changes.currency = state.currency
+    }
+    if (guess.merchant && !state.description.trim()) changes.description = guess.merchant
+    update(changes)
+    if (guess.date) changeDate(guess.date)
+    setScan({ status: 'idle' })
+  }
+
   const allSelected = selectedMembers.length === members.length
+  // Only you in this budget or trip
+  const shared = members.length > 1
 
   /** Runs after the expense itself is saved; false when the receipt couldn't be stored. */
   async function saveReceipt(expenseId: string): Promise<boolean> {
@@ -301,9 +411,9 @@ export function ExpenseForm(props: ExpenseFormProps) {
     if (found) return focusFirstInvalid(form)
 
     setSaving(true)
-    try {
-      const id = await saveExpense({
+    const draft = {
         id: expense?.id,
+        clientId: expense ? undefined : clientId,
         tripId: trip.id,
         categoryId: state.categoryId,
         description: state.description.trim(),
@@ -313,16 +423,44 @@ export function ExpenseForm(props: ExpenseFormProps) {
         paidBy: state.paidBy,
         expenseDate: state.expenseDate || todayIso(),
         notes: state.notes,
+        paymentMethod: state.paymentMethod || null,
+        recurringId: expense ? null : (template?.recurringId ?? null),
+        recurringMonth: expense ? null : (template?.recurringMonth ?? null),
         splits: calculation.splits.map((split) => ({
           userId: split.userId,
           splitType: state.method,
           value: split.value,
           amount: toDecimalString(split.amount, tripCurrency),
         })),
-      })
+      }
+
+    // No signal: keep it on this phone and sync it later (new expenses only).
+    async function queue() {
+      const photo = receipt.kind === 'replace' ? await prepareReceiptImage(receipt.file, RECEIPT_MAX_BYTES).catch(() => null) : null
+      await queueExpense(currentUserId, { ...draft, clientId }, {
+        tripName: trip.name,
+        currency: tripCurrency,
+        total: toDecimalString(totalMinor, tripCurrency),
+      }, photo)
       if (foreign) exchangeRates.remember(state.currency, tripCurrency, rateText)
-      onSaved(id, { receiptFailed: !(await saveReceipt(id)) })
+      onSaved(clientId, { receiptFailed: false, queued: true })
+    }
+
+    try {
+      if (!expense && typeof navigator !== 'undefined' && navigator.onLine === false) return await queue()
+      const id = await saveExpense(draft)
+      if (foreign) exchangeRates.remember(state.currency, tripCurrency, rateText)
+      onSaved(id, { receiptFailed: !(await saveReceipt(id)), queued: false })
     } catch (error) {
+      if (!expense && isOfflineError(error)) {
+        try {
+          return await queue()
+        } catch (queueError) {
+          setFormError(getErrorMessage(queueError))
+          setSaving(false)
+          return
+        }
+      }
       setFormError(getErrorMessage(error))
       setSaving(false)
     }
@@ -332,8 +470,8 @@ export function ExpenseForm(props: ExpenseFormProps) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="min-h-dvh sm:px-6 sm:py-8">
-      <div className="mx-auto flex min-h-dvh max-w-2xl flex-col bg-white sm:min-h-0 sm:rounded-3xl sm:shadow-sm sm:ring-1 sm:ring-slate-900/5">
-        <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-slate-100 bg-white/95 px-2 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 backdrop-blur sm:rounded-t-3xl sm:px-4">
+      <div className="mx-auto flex min-h-dvh max-w-2xl flex-col bg-surface sm:min-h-0 sm:rounded-3xl sm:shadow-sm sm:ring-1 sm:ring-slate-900/5">
+        <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-slate-100 bg-surface/95 px-2 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 backdrop-blur sm:rounded-t-3xl sm:px-4">
           <button
             type="button"
             onClick={onCancel}
@@ -344,7 +482,18 @@ export function ExpenseForm(props: ExpenseFormProps) {
           </button>
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-slate-900">{expense ? 'Edit expense' : 'Add expense'}</h1>
-            <p className="truncate text-xs text-slate-500">{trip.name}</p>
+            <p className="flex items-center gap-1.5 truncate text-xs text-slate-500">
+              <span className="truncate">{trip.name}</span>
+              {onChangeTrip && !expense && (
+                <button
+                  type="button"
+                  onClick={onChangeTrip}
+                  className="tap-target shrink-0 rounded font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  Change
+                </button>
+              )}
+            </p>
           </div>
         </header>
 
@@ -358,7 +507,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
             </label>
             <div className="mt-1.5 flex items-stretch gap-2">
               <div className="relative min-w-0 flex-1">
-                <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-2xl font-bold text-slate-400">
+                <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-2xl font-bold text-slate-500">
                   {symbol}
                 </span>
                 <input
@@ -373,7 +522,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                   aria-invalid={errors.amount ? true : undefined}
                   aria-describedby={errors.amount ? `${amountId}-error` : undefined}
                   className={cn(
-                    'h-16 w-full rounded-2xl border bg-white pr-4 pl-14 text-3xl font-extrabold text-slate-900 tabular-nums placeholder:text-slate-300 focus:ring-4 focus:outline-none',
+                    'h-16 w-full rounded-2xl border bg-surface pr-4 pl-14 text-3xl font-extrabold text-slate-900 tabular-nums placeholder:text-slate-300 focus:ring-4 focus:outline-none',
                     errors.amount
                       ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15'
                       : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500/15',
@@ -384,7 +533,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                 aria-label="Currency"
                 value={state.currency}
                 onChange={(event) => changeCurrency(event.target.value)}
-                className="h-16 shrink-0 rounded-2xl border border-slate-300 bg-white px-3 text-base font-bold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-none"
+                className="h-16 shrink-0 rounded-2xl border border-slate-300 bg-surface px-3 text-base font-bold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-none"
               >
                 {CURRENCY_CODES.map((code) => (
                   <option key={code} value={code}>
@@ -411,13 +560,13 @@ export function ExpenseForm(props: ExpenseFormProps) {
                     placeholder={rateLookup.status === 'loading' ? '…' : '0.00'}
                     aria-label={`Exchange rate: ${tripCurrency} per ${state.currency}`}
                     aria-invalid={errors.rate ? true : undefined}
-                    className="h-11 w-32 rounded-lg border border-slate-300 bg-white px-3 text-base font-semibold tabular-nums focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-none sm:text-sm"
+                    className="h-11 w-32 rounded-lg border border-slate-300 bg-surface px-3 text-base font-semibold tabular-nums focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-none sm:text-sm"
                   />
                   <span>{tripCurrency}</span>
                 </label>
                 <p className="mt-2 text-sm text-slate-500">
                   ≈ <strong className="text-slate-900 tabular-nums">{formatMoney(totalMinor, tripCurrency)}</strong> in
-                  the trip currency
+                  the {trip.kind === 'budget' ? 'budget' : 'trip'} currency
                 </p>
                 <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-slate-500" aria-live="polite">
                   <span>
@@ -453,33 +602,100 @@ export function ExpenseForm(props: ExpenseFormProps) {
             )}
           </div>
 
-          <TextField
-            label="Description"
-            value={state.description}
-            onChange={(event) => update({ description: event.target.value })}
-            error={errors.description}
-            placeholder="Dinner at Lau Pa Sat"
-            maxLength={120}
-            enterKeyHint="next"
-            autoCapitalize="sentences"
-          />
+          <div>
+            <TextField
+              label="Description"
+              value={state.description}
+              onChange={(event) => {
+                update({ description: event.target.value })
+                setShowSuggestions(true)
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              error={errors.description}
+              placeholder={trip.kind === 'budget' ? 'Groceries at Puregold' : 'Dinner at Lau Pa Sat'}
+              maxLength={120}
+              enterKeyHint="next"
+              autoCapitalize="sentences"
+              autoComplete="off"
+            />
+            {matches.length > 0 && (
+              <div className="mt-2" aria-label="Suggestions from your past expenses" role="group">
+                <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">
+                  <Sparkles className="size-3.5" aria-hidden />
+                  {state.description.trim() ? 'Suggestions' : 'Your usual'}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {matches.map((suggestion) => {
+                    const category = categories.find((c) => c.id === suggestion.categoryId)
+                    return (
+                      <button
+                        key={suggestion.description}
+                        type="button"
+                        onClick={() => applySuggestion(suggestion)}
+                        className="flex min-h-11 items-center gap-1.5 rounded-full bg-slate-100 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-200 sm:min-h-9"
+                      >
+                        {category && <span aria-hidden>{category.icon}</span>}
+                        <span className="max-w-40 truncate">{suggestion.description}</span>
+                        <span className="font-normal text-slate-500 tabular-nums">
+                          {formatMoney(toMinor(Number(suggestion.amount), suggestion.currency), suggestion.currency)}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
           <CategoryPicker
-            categories={categories}
+            categories={orderedCategories}
             value={state.categoryId}
             onChange={(categoryId) => update({ categoryId })}
             error={errors.category}
           />
 
-          <MemberRadioChips
-            label="Paid by"
-            members={members}
-            currentUserId={currentUserId}
-            value={state.paidBy}
-            onChange={(paidBy) => update({ paidBy })}
-          />
+          <div role="radiogroup" aria-label="Paid with">
+            <p className="mb-2 text-sm font-semibold text-slate-700">
+              Paid with <span className="font-normal text-slate-500">(optional)</span>
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {PAYMENT_METHODS.map((method) => {
+                const selected = state.paymentMethod === method
+                return (
+                  <button
+                    key={method}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    // Tap again to clear
+                    onClick={() => update({ paymentMethod: selected ? '' : method })}
+                    className={cn(
+                      'flex min-h-11 items-center gap-1 rounded-full px-3.5 text-sm font-semibold ring-1 transition-colors sm:min-h-9',
+                      selected
+                        ? 'bg-brand-600 text-white ring-blue-600'
+                        : 'bg-surface text-slate-700 ring-slate-300 hover:bg-slate-50',
+                    )}
+                  >
+                    {selected && <Check className="size-3.5" aria-hidden />}
+                    {PAYMENT_METHOD_LABELS[method]}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
-          <section className="space-y-4" aria-label="Split">
+          {/* On your own there's nothing to choose: you paid, and it's all yours. */}
+          {shared && (
+            <MemberRadioChips
+              label="Paid by"
+              members={members}
+              currentUserId={currentUserId}
+              value={state.paidBy}
+              onChange={(paidBy) => update({ paidBy })}
+            />
+          )}
+
+          <section className="space-y-4" aria-label="Split" hidden={!shared}>
             <MemberCheckboxChips
               label="Split between"
               members={members}
@@ -491,7 +707,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                   <button
                     type="button"
                     onClick={() => setParticipants(allSelected ? [] : members.map((m) => m.userId))}
-                    className="rounded-md px-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                    className="tap-target rounded-md px-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
                   >
                     {allSelected ? 'Clear' : 'Select all'}
                   </button>
@@ -525,16 +741,106 @@ export function ExpenseForm(props: ExpenseFormProps) {
             )}
           </section>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <TextField
-              label="Date"
-              type="date"
-              value={state.expenseDate}
-              onChange={(event) => changeDate(event.target.value)}
-            />
+          <div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <TextField
+                label="Date"
+                type="date"
+                value={state.expenseDate}
+                max={todayIso()}
+                onChange={(event) => changeDate(event.target.value)}
+              />
+            </div>
+            <div className="mt-2 flex gap-2">
+              {[
+                { label: 'Today', date: todayIso() },
+                { label: 'Yesterday', date: dayBefore(todayIso()) },
+              ].map((choice) => (
+                <button
+                  key={choice.label}
+                  type="button"
+                  onClick={() => changeDate(choice.date)}
+                  aria-pressed={state.expenseDate === choice.date}
+                  className={cn(
+                    'min-h-11 rounded-full px-3.5 text-sm font-semibold ring-1 transition-colors sm:min-h-9',
+                    state.expenseDate === choice.date
+                      ? 'bg-slate-900 text-slate-50 ring-slate-900'
+                      : 'bg-surface text-slate-700 ring-slate-300 hover:bg-slate-50',
+                  )}
+                >
+                  {choice.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <ReceiptPicker existingPath={expense?.receipt_url ?? null} value={receipt} onChange={setReceipt} />
+          <div className="space-y-3">
+            <ReceiptPicker
+              existingPath={expense?.receipt_url ?? null}
+              value={receipt}
+              onChange={(change) => {
+                setReceipt(change)
+                setScan({ status: 'idle' })
+              }}
+            />
+            {receipt.kind === 'replace' && scan.status === 'idle' && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => scanReceipt(receipt.file)}
+                icon={<ScanText className="size-4" aria-hidden />}
+              >
+                Read amount and date from photo
+              </Button>
+            )}
+            <div aria-live="polite">
+              {scan.status === 'reading' && (
+                <p className="text-sm text-slate-600">
+                  Reading the receipt on this device… {Math.round(scan.progress * 100)}%
+                </p>
+              )}
+              {scan.status === 'failed' && (
+                <p className="text-sm text-slate-600">
+                  Couldn’t read this receipt clearly. Type the details instead — the photo is still attached.
+                </p>
+              )}
+              {scan.status === 'done' && (
+                <div className="rounded-2xl bg-blue-50 p-3 ring-1 ring-blue-100">
+                  <p className="text-sm font-semibold text-slate-900">Found on the receipt</p>
+                  <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-sm">
+                    {scan.guess.amount && (
+                      <>
+                        <dt className="text-slate-500">Total</dt>
+                        <dd className="font-semibold tabular-nums">
+                          {formatMoney(toMinor(Number(scan.guess.amount), state.currency), state.currency)}
+                        </dd>
+                      </>
+                    )}
+                    {scan.guess.date && (
+                      <>
+                        <dt className="text-slate-500">Date</dt>
+                        <dd className="font-semibold">{formatDate(scan.guess.date)}</dd>
+                      </>
+                    )}
+                    {scan.guess.merchant && (
+                      <>
+                        <dt className="text-slate-500">Shop</dt>
+                        <dd className="truncate font-semibold">{scan.guess.merchant}</dd>
+                      </>
+                    )}
+                  </dl>
+                  <div className="mt-2 flex gap-2">
+                    <Button size="sm" onClick={() => applyScan(scan.guess)} icon={<Check className="size-4" aria-hidden />}>
+                      Use these
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setScan({ status: 'idle' })}>
+                      Ignore
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           {showNotes ? (
             <TextareaField
@@ -549,14 +855,14 @@ export function ExpenseForm(props: ExpenseFormProps) {
             <button
               type="button"
               onClick={() => setShowNotes(true)}
-              className="rounded-md text-sm font-semibold text-blue-600 hover:text-blue-700"
+              className="tap-target rounded-md text-sm font-semibold text-blue-600 hover:text-blue-700"
             >
               + Add notes
             </button>
           )}
         </div>
 
-        <footer className="sticky bottom-0 border-t border-slate-100 bg-white/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:rounded-b-3xl sm:px-6">
+        <footer className="sticky bottom-0 border-t border-slate-100 bg-surface/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:rounded-b-3xl sm:px-6">
           <div className="flex items-center gap-4">
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-slate-500">Total</p>

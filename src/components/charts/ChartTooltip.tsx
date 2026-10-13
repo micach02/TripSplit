@@ -11,7 +11,7 @@ export interface TooltipRow {
 /** Tooltip body: value first, series name second, keyed by a short line in the series colour. */
 export function ChartTooltipBox({ title, rows }: { title?: ReactNode; rows: TooltipRow[] }) {
   return (
-    <div className="pointer-events-none min-w-36 rounded-xl bg-white px-3 py-2.5 text-sm shadow-lg ring-1 ring-slate-900/10">
+    <div className="pointer-events-none min-w-36 rounded-xl bg-surface px-3 py-2.5 text-sm shadow-lg ring-1 ring-slate-900/10">
       {title && <p className="mb-1.5 text-xs font-semibold text-slate-500">{title}</p>}
       <ul className="space-y-1">
         {rows.map((row) => (

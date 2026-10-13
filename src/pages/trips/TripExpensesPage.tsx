@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, ReceiptText, Search, SlidersHorizontal, X } from 'lucide-react'
+import { Download, Plus, ReceiptText, Search, SlidersHorizontal, X } from 'lucide-react'
 import { ExpenseDetailsDialog } from '@/components/expenses/ExpenseDetailsDialog'
 import { ExpenseList } from '@/components/expenses/ExpenseList'
+import { OutboxList } from '@/components/expenses/OutboxList'
 import type { ExpenseRowContext } from '@/components/expenses/ExpenseRow'
 import { controlClasses } from '@/components/forms/controlStyles'
 import { SelectField } from '@/components/forms/SelectField'
@@ -10,21 +11,25 @@ import { Alert } from '@/components/ui/Alert'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { Spinner } from '@/components/ui/Spinner'
+import { ListSkeleton } from '@/components/ui/Skeleton'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { memberName, useTripContext, type TripContextValue } from '@/hooks/useTripContext'
 import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/cn'
+import { useDataChanged } from '@/lib/dataEvents'
 import { getErrorMessage } from '@/lib/errors'
 import { newExpensePath } from '@/routes/paths'
 import {
   EMPTY_EXPENSE_FILTERS,
+  listAllExpenses,
   listExpenses,
   type ExpenseFilters,
   type ExpenseSort,
   type ExpenseWithSplits,
 } from '@/services/expenseService'
-import { parseMoneyInput, toDecimalString } from '@/utils/calculations/money'
+import { parseMoneyInput, toDecimalString, toMinor } from '@/utils/calculations/money'
+import { downloadCsv, slugify, toCsv } from '@/utils/csv'
+import { paymentMethodLabel } from '@/utils/paymentMethods'
 
 type PanelFilters = Omit<ExpenseFilters, 'search' | 'minAmount' | 'maxAmount'>
 
@@ -102,14 +107,7 @@ function ExpenseResults({
     )
   }
 
-  if (!result) {
-    return (
-      <div className="flex justify-center py-16 text-blue-600" role="status">
-        <Spinner className="size-6" />
-        <span className="sr-only">Loading expenses…</span>
-      </div>
-    )
-  }
+  if (!result) return <ListSkeleton rows={6} label="Loading expenses…" />
 
   if (result.items.length === 0) {
     return filtered ? (
@@ -186,7 +184,7 @@ function FiltersPanel({
 }) {
   const set = <K extends keyof PanelFilters>(key: K, next: PanelFilters[K]) => onChange({ ...value, [key]: next })
   return (
-    <div className="animate-fade-in grid grid-cols-1 gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-900/5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="animate-fade-in grid grid-cols-1 gap-4 rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-slate-900/5 sm:grid-cols-2 lg:grid-cols-3">
       <SelectField label="Category" value={value.categoryId} onChange={(event) => set('categoryId', event.target.value)}>
         <option value="">All categories</option>
         {context.categories.map((category) => (
@@ -266,7 +264,7 @@ const EMPTY_PANEL: PanelFilters = {
 
 export default function TripExpensesPage() {
   const context = useTripContext()
-  const { trip, effectiveStatus, reload } = context
+  const { trip, effectiveStatus, reload, period } = context
   const toast = useToast()
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebouncedValue(search.trim(), 300)
@@ -276,18 +274,26 @@ export default function TripExpensesPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [selected, setSelected] = useState<ExpenseWithSplits | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [exporting, setExporting] = useState(false)
+  useDataChanged(() => setRefreshKey((key) => key + 1))
 
   const minAmount = amountFilter(minText, trip.currency)
   const maxAmount = amountFilter(maxText, trip.currency)
 
+  // Budgets show the month picked at the top, unless you choose your own dates.
+  const customDates = Boolean(panel.dateFrom || panel.dateTo)
+  const periodStart = period?.start ?? ''
+  const periodEnd = period?.end ?? ''
   const filters = useMemo<ExpenseFilters>(
     () => ({
       ...panel,
+      dateFrom: customDates ? panel.dateFrom : periodStart,
+      dateTo: customDates ? panel.dateTo : periodEnd,
       search: debouncedSearch,
       minAmount: minAmount ?? '',
       maxAmount: maxAmount ?? '',
     }),
-    [panel, debouncedSearch, minAmount, maxAmount],
+    [panel, customDates, periodStart, periodEnd, debouncedSearch, minAmount, maxAmount],
   )
 
   const activeCount =
@@ -295,6 +301,55 @@ export default function TripExpensesPage() {
       .length + (panel.sort !== 'newest' ? 1 : 0)
   const filtered = activeCount > 0 || Boolean(debouncedSearch)
   const canAdd = effectiveStatus !== 'completed'
+
+  /** Everything matching the current search and filters, oldest first, with each person's share. */
+  async function exportCsv() {
+    setExporting(true)
+    try {
+      const expenses = await listAllExpenses(trip.id, filters)
+      if (expenses.length === 0) {
+        toast.show('Nothing to export: no expenses match.')
+        return
+      }
+      const people = context.members.length > 1 ? context.members : []
+      const decimal = (amount: number, currency: string) => toDecimalString(toMinor(amount, currency), currency)
+      const rows = [
+        [
+          'Date',
+          'Description',
+          'Category',
+          'Paid by',
+          'Paid with',
+          'Amount',
+          'Currency',
+          `Amount (${trip.currency})`,
+          ...people.map((member) => `${memberName(context, member.userId)}'s share (${trip.currency})`),
+          'Notes',
+        ],
+        ...expenses.map((expense) => [
+          expense.expense_date,
+          expense.description,
+          context.categoryById.get(expense.category_id)?.name ?? '',
+          memberName(context, expense.paid_by),
+          paymentMethodLabel(expense.payment_method),
+          decimal(expense.amount, expense.currency),
+          expense.currency,
+          decimal(expense.converted_amount, trip.currency),
+          ...people.map((member) => {
+            const split = expense.expense_splits.find((entry) => entry.user_id === member.userId)
+            return split ? decimal(split.amount, trip.currency) : ''
+          }),
+          expense.notes ?? '',
+        ]),
+      ]
+      const when = period && !customDates ? `-${slugify(period.label)}` : ''
+      downloadCsv(`${slugify(trip.name)}${when}-expenses.csv`, toCsv(rows))
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   function clearAll() {
     setSearch('')
@@ -328,10 +383,21 @@ export default function TripExpensesPage() {
         >
           <span className="hidden sm:inline">Filters</span>
           {activeCount > 0 && (
-            <span className="flex size-5 items-center justify-center rounded-full bg-blue-600 text-[11px] text-white">
+            <span className="flex size-5 items-center justify-center rounded-full bg-brand-600 text-[11px] text-white">
               {activeCount}
             </span>
           )}
+        </Button>
+        <Button
+          variant="outline"
+          onClick={exportCsv}
+          loading={exporting}
+          aria-label="Export CSV"
+          title="Download these expenses as a spreadsheet (CSV)"
+          icon={<Download className="size-4" aria-hidden />}
+          className="h-12 sm:h-11"
+        >
+          <span className="hidden lg:inline">Export CSV</span>
         </Button>
         {canAdd && (
           <ButtonLink
@@ -369,7 +435,18 @@ export default function TripExpensesPage() {
         </button>
       )}
 
+      <OutboxList tripId={trip.id} format={(minor) => context.money.format(minor)} />
+
+      {period && !customDates && (
+        <p className="text-sm text-slate-500">
+          Showing <span className="font-semibold text-slate-700">{period.label}</span>. Switch months at the top, or pick
+          dates in Filters.
+        </p>
+      )}
+
       <Card className="overflow-hidden">
+        {/* Outline for screen readers: trip name (h1) → this → each day (h3) */}
+        <h2 className="sr-only">Expenses</h2>
         <ExpenseResults
           key={`${JSON.stringify(filters)}:${refreshKey}`}
           tripId={trip.id}

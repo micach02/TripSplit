@@ -1,4 +1,4 @@
-import { Activity, Bell, CirclePlus, CircleUser, House, LayoutDashboard, Luggage, Settings, type LucideIcon } from 'lucide-react'
+import { Bell, ChartPie, CirclePlus, CircleUser, House, LayoutDashboard, Settings, Wallet, type LucideIcon } from 'lucide-react'
 import { paths } from '@/routes/paths'
 
 export interface NavItem {
@@ -11,8 +11,9 @@ export interface NavItem {
 
 export const desktopNav: NavItem[] = [
   { to: paths.dashboard, label: 'Dashboard', icon: LayoutDashboard },
-  { to: paths.trips, label: 'My Trips', icon: Luggage, end: true },
-  { to: paths.newTrip, label: 'Create Trip', icon: CirclePlus },
+  { to: paths.spending, label: 'My spending', icon: ChartPie },
+  { to: paths.trips, label: 'Budgets & Trips', icon: Wallet, end: true },
+  { to: paths.newTrip, label: 'Create', icon: CirclePlus },
   { to: paths.notifications, label: 'Notifications', icon: Bell },
   { to: paths.profile, label: 'Profile', icon: CircleUser },
   { to: paths.settings, label: 'Settings', icon: Settings },
@@ -21,10 +22,10 @@ export const desktopNav: NavItem[] = [
 /** Bottom tab bar; "Add Expense" sits in the middle as a raised button. */
 export const mobileNavLeft: NavItem[] = [
   { to: paths.dashboard, label: 'Home', icon: House },
-  { to: paths.trips, label: 'Trips', icon: Luggage },
+  { to: paths.trips, label: 'Budgets', icon: Wallet },
 ]
 
 export const mobileNavRight: NavItem[] = [
-  { to: paths.activity, label: 'Activity', icon: Activity },
+  { to: paths.spending, label: 'Spending', icon: ChartPie },
   { to: paths.profile, label: 'Profile', icon: CircleUser },
 ]

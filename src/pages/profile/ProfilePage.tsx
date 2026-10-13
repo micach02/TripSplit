@@ -113,7 +113,7 @@ export default function ProfilePage() {
   return (
     <>
       <PageTitle title="Profile" />
-      <PageHeader title="Profile" description="How you appear to your travel buddies." />
+      <PageHeader title="Profile" description="How you appear to the people you share budgets and trips with." />
 
       {!profile ? (
         <ProfileUnavailable />
@@ -131,19 +131,19 @@ export default function ProfilePage() {
               <CardHeader title="Account" />
               <CardBody>
                 <dl className="space-y-4 text-sm">
-                  <div className="flex items-start gap-3">
-                    <Mail className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden />
-                    <div className="min-w-0">
-                      <dt className="text-slate-500">Email</dt>
-                      <dd className="truncate font-semibold text-slate-900">{profile.email || user.email}</dd>
-                    </div>
+                  <div className="min-w-0">
+                    <dt className="flex items-center gap-2 text-slate-500">
+                      <Mail className="size-4 shrink-0" aria-hidden />
+                      Email
+                    </dt>
+                    <dd className="truncate pl-6 font-semibold text-slate-900">{profile.email || user.email}</dd>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <CalendarDays className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden />
-                    <div>
-                      <dt className="text-slate-500">Member since</dt>
-                      <dd className="font-semibold text-slate-900">{formatLongDate(profile.created_at)}</dd>
-                    </div>
+                  <div>
+                    <dt className="flex items-center gap-2 text-slate-500">
+                      <CalendarDays className="size-4 shrink-0" aria-hidden />
+                      Member since
+                    </dt>
+                    <dd className="pl-6 font-semibold text-slate-900">{formatLongDate(profile.created_at)}</dd>
                   </div>
                 </dl>
               </CardBody>

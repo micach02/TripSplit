@@ -5,6 +5,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { ButtonLink } from '@/components/ui/Button'
 import { Logo } from '@/components/ui/Logo'
 import { useCurrentUser } from '@/hooks/useAuth'
+import { useInvitations } from '@/hooks/useInvitations'
 import { useSignOut } from '@/hooks/useSignOut'
 import { cn } from '@/lib/cn'
 import { paths } from '@/routes/paths'
@@ -12,9 +13,10 @@ import { paths } from '@/routes/paths'
 export function Sidebar() {
   const { user, profile, displayName } = useCurrentUser()
   const { signOut, signingOut } = useSignOut()
+  const { count: invitationCount } = useInvitations()
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-surface lg:flex">
       <div className="flex h-16 items-center px-5">
         <Link to={paths.dashboard} aria-label="TripSplit dashboard" className="rounded-lg">
           <Logo />
@@ -43,6 +45,12 @@ export function Sidebar() {
               >
                 <Icon className="size-5 shrink-0" aria-hidden />
                 {label}
+                {to === paths.notifications && invitationCount > 0 && (
+                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-bold text-white">
+                    {invitationCount > 9 ? '9+' : invitationCount}
+                    <span className="sr-only"> new</span>
+                  </span>
+                )}
               </NavLink>
             </li>
           ))}
@@ -65,7 +73,7 @@ export function Sidebar() {
             type="button"
             onClick={signOut}
             disabled={signingOut}
-            className="rounded-xl p-2.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+            className="rounded-xl p-2.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
             aria-label="Log out"
             title="Log out"
           >

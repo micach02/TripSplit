@@ -69,14 +69,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={toast.id}
               role={toast.tone === 'error' ? 'alert' : 'status'}
-              className="animate-toast-in pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl bg-white p-4 text-sm font-medium text-slate-800 shadow-lg ring-1 ring-slate-900/10"
+              className="animate-toast-in pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl bg-surface p-4 text-sm font-medium text-slate-800 shadow-lg ring-1 ring-slate-900/10"
             >
               <Icon className={cn('mt-px size-5 shrink-0', className)} aria-hidden />
               <p className="flex-1">{toast.message}</p>
               <button
                 type="button"
                 onClick={() => dismiss(toast.id)}
-                className="-m-1 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                className="-m-1 rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-600"
                 aria-label="Dismiss notification"
               >
                 <X className="size-4" aria-hidden />

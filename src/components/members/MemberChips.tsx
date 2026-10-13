@@ -20,8 +20,8 @@ const chipClasses = (selected: boolean) =>
   cn(
     'flex min-h-11 shrink-0 items-center gap-2 rounded-full py-1 pr-3.5 pl-1 text-sm font-semibold transition',
     selected
-      ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
-      : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50',
+      ? 'bg-brand-600 text-white shadow-sm shadow-blue-600/25'
+      : 'bg-surface text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50',
   )
 
 /** Pick exactly one member (e.g. who paid). */
@@ -93,7 +93,7 @@ export function MemberCheckboxChips({
               <span className="relative">
                 <Avatar name={member.profile.full_name} src={member.profile.avatar_url} size="sm" decorative />
                 {isSelected && (
-                  <span className="absolute -right-0.5 -bottom-0.5 flex size-3.5 items-center justify-center rounded-full bg-white text-blue-600 ring-1 ring-blue-600">
+                  <span className="absolute -right-0.5 -bottom-0.5 flex size-3.5 items-center justify-center rounded-full bg-surface text-blue-600 ring-1 ring-blue-600">
                     <Check className="size-2.5" strokeWidth={4} aria-hidden />
                   </span>
                 )}

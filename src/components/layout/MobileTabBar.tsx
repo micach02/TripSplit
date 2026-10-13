@@ -28,7 +28,7 @@ export function MobileTabBar() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
     >
       <ul className="mx-auto grid max-w-md grid-cols-5 items-center">
         {mobileNavLeft.map((item) => (
@@ -38,7 +38,7 @@ export function MobileTabBar() {
           <NavLink
             to={paths.addExpense}
             aria-label="Add expense"
-            className="-mt-7 flex size-15 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/35 ring-4 ring-white transition-transform active:scale-95"
+            className="-mt-7 flex size-15 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg shadow-blue-600/35 ring-4 ring-surface transition-transform active:scale-95"
           >
             <Plus className="size-7" strokeWidth={2.5} aria-hidden />
           </NavLink>

@@ -1,7 +1,10 @@
+import { cacheGet, cacheSet, isOfflineError } from '@/lib/offlineCache'
 import { supabase } from '@/lib/supabase'
 import { getCoverUrls, removeTripCover, removeTripReceipts, uploadTripCover } from '@/services/storageService'
 import type { Category, MemberRole, Profile, Trip, TripStatus } from '@/types/models'
 import { toMinor } from '@/utils/calculations/money'
+import { currentMonth, monthOf } from '@/utils/budgetPeriod'
+import type { TripKind } from '@/utils/tripKind'
 import { getTripStatus } from '@/utils/tripStatus'
 
 export class TripNotFoundError extends Error {
@@ -19,7 +22,10 @@ export interface TripMemberWithProfile {
   profile: Pick<Profile, 'id' | 'full_name' | 'email' | 'avatar_url'>
 }
 
-/** A trip as shown in lists: money in minor units, status computed from dates. */
+/**
+ * A trip or budget as shown in lists: money in minor units, status computed
+ * from dates. For budgets, budget and spent are for the current month.
+ */
 export interface TripListItem extends Trip {
   budgetMinor: number
   spentMinor: number
@@ -28,46 +34,83 @@ export interface TripListItem extends Trip {
   members: Array<{ userId: string; fullName: string; avatarUrl: string | null }>
 }
 
+/** Spending in one calendar month ('yyyy-MM'), in trip-currency minor units. */
+export interface MonthTotal {
+  month: string
+  spentMinor: number
+  expenseCount: number
+}
+
 export interface TripDetails {
   trip: Trip
   effectiveStatus: TripStatus
+  /** Trips: the total budget. Budgets: the amount per month. */
   budgetMinor: number
+  /** All-time spending */
   spentMinor: number
   expenseCount: number
+  /** Spending per month, oldest first (used by budgets) */
+  months: MonthTotal[]
+  /** Loaded from this device's offline copy (no connection) */
+  fromCache?: boolean
   coverUrl: string | null
   members: TripMemberWithProfile[]
   categories: Category[]
 }
 
 export interface TripInput {
+  kind: TripKind
   name: string
   destination: string | null
   description: string | null
   startDate: string
-  endDate: string
+  /** null for budgets, which are ongoing */
+  endDate: string | null
   /** Decimal string in the trip currency, e.g. "50000.00" */
   budget: string
   currency: string
+  /** Budgets: carry unspent money (or overspending) into the next month */
+  rollover?: boolean
+}
+
+/** listTrips, falling back to the last list loaded on this device when offline. */
+export async function listTripsOfflineFirst(): Promise<TripListItem[]> {
+  try {
+    const trips = await listTrips()
+    cacheSet('trips', trips)
+    return trips
+  } catch (error) {
+    const cached = isOfflineError(error) ? cacheGet<TripListItem[]>('trips') : null
+    if (cached) return cached
+    throw error
+  }
 }
 
 export async function listTrips(): Promise<TripListItem[]> {
-  const [tripsResult, totalsResult] = await Promise.all([
+  const [tripsResult, totalsResult, monthResult] = await Promise.all([
     supabase
       .from('trips')
       .select('*, trip_members(user_id, joined_at, profiles(full_name, avatar_url))')
       .order('start_date', { ascending: false }),
     supabase.from('trip_totals').select('trip_id, total_spent'),
+    // Budgets show this month's spending
+    supabase.from('trip_month_totals').select('trip_id, total_spent').eq('month', `${currentMonth()}-01`),
   ])
   if (tripsResult.error) throw tripsResult.error
   if (totalsResult.error) throw totalsResult.error
+  if (monthResult.error) throw monthResult.error
 
   const spentByTrip = new Map(totalsResult.data.map((row) => [row.trip_id, row.total_spent ?? 0]))
+  const spentThisMonth = new Map(monthResult.data.map((row) => [row.trip_id, row.total_spent ?? 0]))
   const coverUrls = await getCoverUrls(tripsResult.data.map((trip) => trip.cover_image_url))
 
   return tripsResult.data.map(({ trip_members: members, ...trip }) => ({
     ...trip,
     budgetMinor: toMinor(trip.budget, trip.currency),
-    spentMinor: toMinor(spentByTrip.get(trip.id) ?? 0, trip.currency),
+    spentMinor: toMinor(
+      (trip.kind === 'budget' ? spentThisMonth.get(trip.id) : spentByTrip.get(trip.id)) ?? 0,
+      trip.currency,
+    ),
     effectiveStatus: getTripStatus(trip),
     coverUrl: trip.cover_image_url ? (coverUrls.get(trip.cover_image_url) ?? null) : null,
     members: [...members]
@@ -81,7 +124,7 @@ export async function listTrips(): Promise<TripListItem[]> {
 }
 
 export async function getTripDetails(tripId: string): Promise<TripDetails> {
-  const [tripResult, membersResult, categoriesResult, totalsResult] = await Promise.all([
+  const [tripResult, membersResult, categoriesResult, totalsResult, monthsResult] = await Promise.all([
     supabase.from('trips').select('*').eq('id', tripId).maybeSingle(),
     supabase
       .from('trip_members')
@@ -90,12 +133,14 @@ export async function getTripDetails(tripId: string): Promise<TripDetails> {
       .order('joined_at'),
     supabase.from('categories').select('*').eq('trip_id', tripId).order('sort_order').order('name'),
     supabase.from('trip_totals').select('total_spent, expense_count').eq('trip_id', tripId).maybeSingle(),
+    supabase.from('trip_month_totals').select('month, total_spent, expense_count').eq('trip_id', tripId).order('month'),
   ])
   if (tripResult.error) throw tripResult.error
   if (!tripResult.data) throw new TripNotFoundError()
   if (membersResult.error) throw membersResult.error
   if (categoriesResult.error) throw categoriesResult.error
   if (totalsResult.error) throw totalsResult.error
+  if (monthsResult.error) throw monthsResult.error
 
   const trip = tripResult.data
   const coverUrls = await getCoverUrls([trip.cover_image_url])
@@ -106,6 +151,11 @@ export async function getTripDetails(tripId: string): Promise<TripDetails> {
     budgetMinor: toMinor(trip.budget, trip.currency),
     spentMinor: toMinor(totalsResult.data?.total_spent ?? 0, trip.currency),
     expenseCount: totalsResult.data?.expense_count ?? 0,
+    months: monthsResult.data.flatMap((row) =>
+      row.month
+        ? [{ month: monthOf(row.month), spentMinor: toMinor(row.total_spent ?? 0, trip.currency), expenseCount: row.expense_count ?? 0 }]
+        : [],
+    ),
     coverUrl: trip.cover_image_url ? (coverUrls.get(trip.cover_image_url) ?? null) : null,
     members: membersResult.data.map((member) => ({
       id: member.id,
@@ -118,23 +168,26 @@ export async function getTripDetails(tripId: string): Promise<TripDetails> {
   }
 }
 
+/** The editable columns (`kind` is set once, at creation). */
 function toRow(input: TripInput) {
+  const budget = input.kind === 'budget'
   return {
     name: input.name.trim(),
-    destination: input.destination?.trim() || null,
+    destination: budget ? null : input.destination?.trim() || null,
     description: input.description?.trim() || null,
     start_date: input.startDate,
-    end_date: input.endDate,
+    end_date: budget ? null : input.endDate,
     budget: Number(input.budget),
     currency: input.currency,
+    rollover: budget ? Boolean(input.rollover) : false,
   }
 }
 
-/** Creates a trip (the database adds the owner as a member and default categories). */
+/** Creates a trip or budget (the database adds the owner as a member and default categories for its kind). */
 export async function createTrip(input: TripInput, status: TripStatus, cover: Blob | null): Promise<Trip> {
   const { data, error } = await supabase
     .from('trips')
-    .insert({ ...toRow(input), status })
+    .insert({ ...toRow(input), kind: input.kind, status })
     .select('*')
     .single()
   if (error) throw error

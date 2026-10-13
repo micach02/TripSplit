@@ -39,8 +39,8 @@ export function SegmentedControl<T extends string>({ label, value, options, onCh
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={cn(
-              'min-h-10 flex-1 rounded-lg px-2 text-sm font-semibold transition-colors',
-              selected ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800',
+              'min-h-11 flex-1 rounded-lg px-2 text-sm font-semibold transition-colors sm:min-h-10',
+              selected ? 'bg-surface text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900',
             )}
           >
             {option.label}

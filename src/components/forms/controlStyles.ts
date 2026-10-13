@@ -6,8 +6,8 @@ import { cn } from '@/lib/cn'
  */
 export function controlClasses(invalid: boolean, className?: string): string {
   return cn(
-    'block h-12 w-full rounded-xl border bg-white px-3.5 text-base text-slate-900 shadow-xs transition-colors sm:h-11 sm:text-[15px]',
-    'placeholder:text-slate-400 focus:ring-4 focus:outline-none',
+    'block h-12 w-full rounded-xl border bg-surface px-3.5 text-base text-slate-900 shadow-xs transition-colors sm:h-11 sm:text-[15px]',
+    'placeholder:text-slate-500 focus:ring-4 focus:outline-none',
     'disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500',
     invalid
       ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15'

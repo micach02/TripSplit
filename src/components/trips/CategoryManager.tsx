@@ -96,7 +96,7 @@ export function CategoryManager({ tripId, categories, canManage, onChanged }: Ca
                 <button
                   type="button"
                   onClick={() => open({ id: category.id, name: category.name, icon: category.icon, color: category.color })}
-                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  className="rounded-lg p-3.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 sm:p-2"
                   aria-label={`Edit ${category.name}`}
                 >
                   <Pencil className="size-4" aria-hidden />
@@ -107,7 +107,7 @@ export function CategoryManager({ tripId, categories, canManage, onChanged }: Ca
                     setDeleteError(null)
                     setToDelete(category)
                   }}
-                  className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                  className="rounded-lg p-3.5 text-slate-500 hover:bg-red-50 hover:text-red-600 sm:p-2"
                   aria-label={`Delete ${category.name}`}
                 >
                   <Trash2 className="size-4" aria-hidden />

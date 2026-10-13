@@ -37,7 +37,7 @@ export function ReceiptThumbnail({ path, title }: { path: string; title: string 
           </span>
         )}
         {url && (
-          <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-slate-950/70 px-2.5 py-1 text-xs font-semibold text-white">
+          <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-scrim/70 px-2.5 py-1 text-xs font-semibold text-white">
             <Maximize2 className="size-3.5" aria-hidden />
             View
           </span>

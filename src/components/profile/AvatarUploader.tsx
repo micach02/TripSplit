@@ -6,8 +6,8 @@ import { Spinner } from '@/components/ui/Spinner'
 import { useAuth, useCurrentUser } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
 import { getErrorMessage } from '@/lib/errors'
-import { AVATAR_ACCEPTED_TYPES, removeAvatar, uploadAvatar } from '@/services/storageService'
-import { resizeImage } from '@/utils/image'
+import { removeAvatar, uploadAvatar } from '@/services/storageService'
+import { checkImageFile, IMAGE_ACCEPT, resizeImage } from '@/utils/image'
 
 /** Raw photos straight off a phone; they're shrunk to ~50 KB before upload. */
 const MAX_SOURCE_BYTES = 15 * 1024 * 1024
@@ -25,16 +25,13 @@ export function AvatarUploader() {
     event.target.value = '' // allow choosing the same file again
     if (!file) return
 
-    if (!(AVATAR_ACCEPTED_TYPES as readonly string[]).includes(file.type)) {
-      toast.error('Please choose a JPG, PNG or WEBP image.')
-      return
-    }
-    if (file.size > MAX_SOURCE_BYTES) {
-      toast.error('That photo is too large. Please choose one under 15 MB.')
-      return
-    }
-
     setBusy('upload')
+    const problem = await checkImageFile(file, MAX_SOURCE_BYTES)
+    if (problem) {
+      toast.error(problem)
+      setBusy(null)
+      return
+    }
     try {
       const resized = await resizeImage(file, 512)
       const url = await uploadAvatar(user.id, resized)
@@ -66,7 +63,7 @@ export function AvatarUploader() {
       <div className="relative">
         <Avatar name={displayName} src={avatarUrl} size="xl" decorative />
         {busy && (
-          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-white/70 text-blue-600">
+          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-surface/70 text-blue-600">
             <Spinner className="size-7" />
           </span>
         )}
@@ -100,7 +97,7 @@ export function AvatarUploader() {
         <input
           ref={inputRef}
           type="file"
-          accept={AVATAR_ACCEPTED_TYPES.join(',')}
+          accept={IMAGE_ACCEPT}
           className="sr-only"
           tabIndex={-1}
           aria-hidden

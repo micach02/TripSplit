@@ -1,27 +1,30 @@
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router'
-import { CalendarRange, Plus, ReceiptText, UserPlus, Users } from 'lucide-react'
+import { CalendarClock, CalendarRange, Plus, ReceiptText, UserPlus, Users } from 'lucide-react'
 import { ExpenseDetailsDialog } from '@/components/expenses/ExpenseDetailsDialog'
 import { ExpenseList } from '@/components/expenses/ExpenseList'
+import { RecurringPanel } from '@/components/recurring/RecurringPanel'
 import { Alert } from '@/components/ui/Alert'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { Spinner } from '@/components/ui/Spinner'
+import { ListSkeleton } from '@/components/ui/Skeleton'
 import { useAsync } from '@/hooks/useAsync'
 import { useTripContext } from '@/hooks/useTripContext'
 import { useToast } from '@/hooks/useToast'
+import { useDataChanged } from '@/lib/dataEvents'
 import { newExpensePath, tripPath } from '@/routes/paths'
 import { EMPTY_EXPENSE_FILTERS, listExpenses, type ExpenseWithSplits } from '@/services/expenseService'
+import { daysLeft, elapsedDays } from '@/utils/budgetPeriod'
 import { hasTripEnded, tripLengthInDays } from '@/utils/tripStatus'
 
 const RECENT_COUNT = 5
 
 function Stat({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: string | number }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-900/5">
+    <div className="flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-slate-900/5">
       <span className="flex size-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
         <Icon className="size-5" aria-hidden />
       </span>
@@ -35,10 +38,18 @@ function Stat({ icon: Icon, label, value }: { icon: typeof Users; label: string;
 
 export default function TripOverviewPage() {
   const context = useTripContext()
-  const { trip, members, expenseCount, isOwner, effectiveStatus, reload } = context
+  const { trip, members, isOwner, effectiveStatus, reload, isBudget, copy, period, monthRange, periodExpenseCount, periodSpentMinor, money } =
+    context
   const toast = useToast()
-  const load = useCallback(() => listExpenses(trip.id, EMPTY_EXPENSE_FILTERS, 0, RECENT_COUNT), [trip.id])
+  // Budgets: the month being viewed. Trips: everything.
+  const periodStart = period?.start ?? ''
+  const periodEnd = period?.end ?? ''
+  const load = useCallback(
+    () => listExpenses(trip.id, { ...EMPTY_EXPENSE_FILTERS, dateFrom: periodStart, dateTo: periodEnd }, 0, RECENT_COUNT),
+    [trip.id, periodStart, periodEnd],
+  )
   const recent = useAsync(load)
+  useDataChanged(recent.reload)
   const [selected, setSelected] = useState<ExpenseWithSplits | null>(null)
   const ended = effectiveStatus !== 'completed' && hasTripEnded(trip)
   const canAdd = effectiveStatus !== 'completed'
@@ -56,20 +67,28 @@ export default function TripOverviewPage() {
       )}
 
       <div className="grid grid-cols-3 gap-3">
-        <Stat icon={ReceiptText} label="Expenses" value={expenseCount} />
-        <Stat icon={Users} label="Travelers" value={members.length} />
-        <Stat icon={CalendarRange} label="Days" value={tripLengthInDays(trip.start_date, trip.end_date)} />
+        <Stat icon={ReceiptText} label={period ? `In ${period.shortName}` : 'Expenses'} value={periodExpenseCount} />
+        <Stat icon={Users} label={copy.Members} value={members.length} />
+        {period ? (
+          period.month === monthRange?.latest ? (
+            <Stat icon={CalendarClock} label="Days left" value={daysLeft(period)} />
+          ) : (
+            <Stat icon={CalendarRange} label="Per day" value={money.format(Math.round(periodSpentMinor / elapsedDays(period)))} />
+          )
+        ) : (
+          <Stat icon={CalendarRange} label="Days" value={trip.end_date ? tripLengthInDays(trip.start_date, trip.end_date) : '—'} />
+        )}
       </div>
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <Card className="overflow-hidden">
           <CardHeader
-            title="Recent expenses"
+            title={period ? `Latest in ${period.label}` : 'Recent expenses'}
             action={
-              expenseCount > 0 && (
+              periodExpenseCount > 0 && (
                 <Link
                   to={tripPath(trip.id, 'expenses')}
-                  className="shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                  className="tap-target shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700"
                 >
                   See all
                 </Link>
@@ -78,14 +97,12 @@ export default function TripOverviewPage() {
           />
           <div className="mt-4">
             {!recent.data ? (
-              <div className="flex justify-center py-10 text-blue-600">
-                <Spinner />
-              </div>
+              <ListSkeleton rows={3} label="Loading recent expenses…" />
             ) : recent.data.items.length === 0 ? (
               <EmptyState
                 icon={ReceiptText}
-                title="No expenses yet."
-                description="Start tracking your trip expenses."
+                title={period ? `No expenses in ${period.label} yet.` : 'No expenses yet.'}
+                description={isBudget ? 'Add groceries, meals and bills as you go.' : 'Start tracking your trip expenses.'}
                 action={
                   canAdd && (
                     <ButtonLink to={newExpensePath(trip.id)} icon={<Plus className="size-5" aria-hidden />}>
@@ -107,11 +124,11 @@ export default function TripOverviewPage() {
 
         <Card>
           <CardHeader
-            title="Travelers"
+            title={copy.Members}
             action={
               <Link
                 to={tripPath(trip.id, 'people')}
-                className="shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                className="tap-target shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700"
               >
                 Manage
               </Link>
@@ -120,8 +137,14 @@ export default function TripOverviewPage() {
           <CardBody>
             {members.length === 1 ? (
               <div className="text-center">
-                <p className="font-semibold text-slate-900">Invite your travel buddies.</p>
-                <p className="mt-1 text-sm text-slate-500">Expenses can only be split with people on the trip.</p>
+                <p className="font-semibold text-slate-900">
+                  {isBudget ? 'Just you for now.' : 'Invite your travel buddies.'}
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {isBudget
+                    ? 'Share this budget with your household or housemates to split shared costs.'
+                    : 'Expenses can only be split with people on the trip.'}
+                </p>
                 {isOwner && (
                   <ButtonLink
                     to={tripPath(trip.id, 'people')}
@@ -129,7 +152,7 @@ export default function TripOverviewPage() {
                     className="mt-4"
                     icon={<UserPlus className="size-4" aria-hidden />}
                   >
-                    Invite Friends
+                    {isBudget ? 'Invite people' : 'Invite Friends'}
                   </ButtonLink>
                 )}
               </div>
@@ -150,16 +173,18 @@ export default function TripOverviewPage() {
         </Card>
       </div>
 
+      {isBudget && <RecurringPanel context={context} />}
+
       {trip.description && (
         <Card>
-          <CardHeader title="About this trip" />
+          <CardHeader title={`About this ${copy.noun}`} />
           <CardBody>
             <p className="text-sm leading-relaxed whitespace-pre-line text-slate-600">{trip.description}</p>
           </CardBody>
         </Card>
       )}
 
-      {/* Mobile: a big, thumb-friendly add button for this trip */}
+      {/* Mobile: a big, thumb-friendly add button */}
       {canAdd && (
         <ButtonLink
           to={newExpensePath(trip.id)}
@@ -168,7 +193,7 @@ export default function TripOverviewPage() {
           className="sm:hidden"
           icon={<Plus className="size-5" aria-hidden />}
         >
-          Add expense to this trip
+          Add expense to this {copy.noun}
         </ButtonLink>
       )}
 

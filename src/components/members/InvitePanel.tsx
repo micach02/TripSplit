@@ -1,5 +1,5 @@
 import { useCallback, useState, type FormEvent } from 'react'
-import { Check, Copy, Link2, Mail, Send, Share2, X } from 'lucide-react'
+import { Check, Clock, Copy, Link2, Mail, RotateCcw, Send, Share2, X, XCircle } from 'lucide-react'
 import { focusFirstInvalid } from '@/components/forms/controlStyles'
 import { TextField } from '@/components/forms/TextField'
 import { Button } from '@/components/ui/Button'
@@ -9,28 +9,55 @@ import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/cn'
 import { copyText } from '@/lib/clipboard'
 import { getErrorMessage } from '@/lib/errors'
-import { invitationLink, inviteToTrip, listPendingInvitations, revokeInvitation } from '@/services/memberService'
-import type { TripInvitation } from '@/types/models'
+import {
+  invitationLink,
+  inviteToTrip,
+  listTripInvitations,
+  renewInvitation,
+  revokeInvitation,
+  type ManagedInvitation,
+} from '@/services/memberService'
 import { formatRelative } from '@/utils/format'
-import { invitationMessage } from '@/utils/invitations'
+import { expiryLabel, invitationMessage } from '@/utils/invitations'
 import { validateEmail } from '@/utils/validation'
 
 const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
-/** Owner tools: invite people, share their invite links, and cancel pending invitations. */
+const labelFor = (invitation: ManagedInvitation) => invitation.invited_name ?? invitation.invited_email
+
+/**
+ * Invitations that didn't work out, newest per person, leaving out anyone who
+ * already has a newer invitation waiting.
+ */
+function closedInvitations(all: ManagedInvitation[]): ManagedInvitation[] {
+  const waiting = new Set(all.filter((i) => i.state === 'pending').map((i) => i.invited_email))
+  const seen = new Set<string>()
+  return all.filter((invitation) => {
+    if (invitation.state === 'pending' || waiting.has(invitation.invited_email) || seen.has(invitation.invited_email)) {
+      return false
+    }
+    seen.add(invitation.invited_email)
+    return true
+  })
+}
+
+/** Owner tools: invite people, share links, and follow invitations through to joining or not. */
 export function InvitePanel({ tripId, tripName }: { tripId: string; tripName: string }) {
   const toast = useToast()
   const { profile } = useAuth()
-  const load = useCallback(() => listPendingInvitations(tripId), [tripId])
-  const { data: pending, reload } = useAsync(load)
+  const load = useCallback(() => listTripInvitations(tripId), [tripId])
+  const { data, reload } = useAsync(load)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [errors, setErrors] = useState<{ name?: string; email?: string }>({})
   const [sending, setSending] = useState(false)
-  const [revoking, setRevoking] = useState<string | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [justCreated, setJustCreated] = useState<string | null>(null)
   const [showLink, setShowLink] = useState<string | null>(null)
+
+  const pending = (data ?? []).filter((invitation) => invitation.state === 'pending')
+  const closed = closedInvitations(data ?? [])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -63,19 +90,34 @@ export function InvitePanel({ tripId, tripName }: { tripId: string; tripName: st
     }
   }
 
-  async function revoke(invitationId: string) {
-    setRevoking(invitationId)
+  async function revoke(invitation: ManagedInvitation) {
+    setBusy(invitation.id)
     try {
-      await revokeInvitation(invitationId)
+      await revokeInvitation(invitation.id)
       reload()
     } catch (caught) {
       toast.error(getErrorMessage(caught))
     } finally {
-      setRevoking(null)
+      setBusy(null)
     }
   }
 
-  async function copyLink(invitation: TripInvitation) {
+  async function renew(invitation: ManagedInvitation) {
+    setBusy(invitation.id)
+    try {
+      const renewed = await renewInvitation(invitation.id)
+      toast.success(`New invite for ${labelFor(invitation)} is ready — send them the new link.`)
+      setJustCreated(renewed.id)
+      setShowLink(null)
+      reload()
+    } catch (caught) {
+      toast.error(getErrorMessage(caught))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function copyLink(invitation: ManagedInvitation) {
     if (await copyText(invitationLink(invitation.token))) {
       setCopied(invitation.id)
       setShowLink(null)
@@ -87,7 +129,7 @@ export function InvitePanel({ tripId, tripName }: { tripId: string; tripName: st
     }
   }
 
-  async function share(invitation: TripInvitation) {
+  async function share(invitation: ManagedInvitation) {
     try {
       await navigator.share({
         title: `Join ${tripName} on TripSplit`,
@@ -134,13 +176,14 @@ export function InvitePanel({ tripId, tripName }: { tripId: string; tripName: st
         </Button>
       </form>
 
-      {pending && pending.length > 0 && (
+      {pending.length > 0 && (
         <div>
           <h3 className="mb-2 text-sm font-semibold text-slate-700">Pending invitations</h3>
           <ul className="divide-y divide-slate-100 rounded-2xl ring-1 ring-slate-200">
             {pending.map((invitation) => {
-              const label = invitation.invited_name ?? invitation.invited_email
+              const label = labelFor(invitation)
               const fresh = invitation.id === justCreated
+              const expiry = expiryLabel(invitation.expires_at)
               return (
                 <li key={invitation.id} className={cn('px-3 py-3', fresh && 'animate-fade-in bg-blue-50/60')}>
                   <div className="flex items-center gap-3">
@@ -150,8 +193,8 @@ export function InvitePanel({ tripId, tripName }: { tripId: string; tripName: st
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-slate-800">{label}</p>
                       <p className="truncate text-xs text-slate-500">
-                        {invitation.invited_name && `${invitation.invited_email} · `}Created{' '}
-                        {formatRelative(invitation.created_at)}
+                        {invitation.invited_name && `${invitation.invited_email} · `}
+                        <span className={cn(expiry.soon && 'font-semibold text-orange-700')}>{expiry.text}</span>
                       </p>
                     </div>
                   </div>
@@ -191,8 +234,8 @@ export function InvitePanel({ tripId, tripName }: { tripId: string; tripName: st
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => revoke(invitation.id)}
-                      loading={revoking === invitation.id}
+                      onClick={() => revoke(invitation)}
+                      loading={busy === invitation.id}
                       icon={<X className="size-4" aria-hidden />}
                       aria-label={`Cancel the invitation to ${label}`}
                       className="max-sm:ml-auto"
@@ -215,6 +258,53 @@ export function InvitePanel({ tripId, tripName }: { tripId: string; tripName: st
                       />
                     </div>
                   )}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+
+      {closed.length > 0 && (
+        <div>
+          <h3 className="mb-2 text-sm font-semibold text-slate-700">Didn’t join</h3>
+          <ul className="divide-y divide-slate-100 rounded-2xl ring-1 ring-slate-200">
+            {closed.map((invitation) => {
+              const label = labelFor(invitation)
+              const expired = invitation.state === 'expired'
+              const StatusIcon = expired ? Clock : XCircle
+              return (
+                <li key={invitation.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                    <StatusIcon className="size-4" aria-hidden />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-700">{label}</p>
+                    <p className="truncate text-xs text-slate-500">
+                      {expired ? `Expired ${formatRelative(invitation.expires_at)}` : 'Declined the invitation'}
+                    </p>
+                  </div>
+                  <div className="flex gap-1 max-sm:w-full max-sm:pl-12">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => renew(invitation)}
+                      loading={busy === invitation.id}
+                      disabled={busy !== null && busy !== invitation.id}
+                      icon={<RotateCcw className="size-4" aria-hidden />}
+                      aria-label={`Invite ${label} again`}
+                    >
+                      Invite again
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => revoke(invitation)}
+                      disabled={busy !== null}
+                      icon={<X className="size-4" aria-hidden />}
+                      aria-label={`Remove ${label} from this list`}
+                    />
+                  </div>
                 </li>
               )
             })}

@@ -16,9 +16,10 @@ import { PageHeader, PageTitle } from '@/components/ui/PageHeader'
 import { useAsync } from '@/hooks/useAsync'
 import { useCurrentUser } from '@/hooks/useAuth'
 import { DEFAULT_CURRENCY, isCurrencyCode } from '@/lib/currencies'
+import { useDataChanged } from '@/lib/dataEvents'
 import { getErrorMessage } from '@/lib/errors'
-import { paths } from '@/routes/paths'
-import { getDashboardSummary, type DashboardSummary } from '@/services/dashboardService'
+import { newBudgetPath, paths } from '@/routes/paths'
+import { getDashboardSummaryOfflineFirst, type DashboardSummary } from '@/services/dashboardService'
 import { formatMoney } from '@/utils/calculations/money'
 import { firstName } from '@/utils/format'
 
@@ -58,11 +59,11 @@ function Overview({
   return (
     <section aria-label="Overview">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-slate-700">Active trips at a glance</h2>
+        <h2 className="text-sm font-semibold text-slate-700">At a glance</h2>
         {picker}
       </div>
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Active Trips" value={activeTrips.length} icon={Plane} tone="primary" />
+        <StatCard label="Active" value={activeTrips.length} icon={Plane} tone="primary" hint="budgets & trips" />
         <StatCard label="Total Spent" value={formatMoney(totals.spent, currency)} icon={Wallet} />
         <StatCard label="Total Budget" value={formatMoney(totals.budget, currency)} icon={PiggyBank} />
         <StatCard
@@ -91,9 +92,9 @@ function Overview({
           </>
         )}
         {convertedTripCount > 0 &&
-          ` ${convertedTripCount === 1 ? '1 trip was' : `${convertedTripCount} trips were`} converted at today's exchange rate.`}
+          ` ${convertedTripCount === 1 ? '1 budget or trip was' : `${convertedTripCount} were`} converted at today's exchange rate.`}
         {unconvertedTripCount > 0 &&
-          ` ${unconvertedTripCount === 1 ? '1 trip isn’t' : `${unconvertedTripCount} trips aren’t`} included — exchange rates couldn’t be loaded.`}
+          ` ${unconvertedTripCount === 1 ? '1 budget or trip isn’t' : `${unconvertedTripCount} aren’t`} included — exchange rates couldn’t be loaded.`}
       </p>
     </section>
   )
@@ -104,8 +105,9 @@ export default function DashboardPage() {
   const preferredCurrency = profile?.preferred_currency ?? DEFAULT_CURRENCY
   const [viewCurrency, setViewCurrency] = useState<string | null>(readViewCurrency)
   const currency = viewCurrency ?? preferredCurrency
-  const load = useCallback(() => getDashboardSummary(currency, user.id), [currency, user.id])
+  const load = useCallback(() => getDashboardSummaryOfflineFirst(currency, user.id), [currency, user.id])
   const { data: summary, error, loading, reload } = useAsync(load)
+  useDataChanged(reload)
 
   function changeViewCurrency(code: string) {
     const choice = code === preferredCurrency ? null : code
@@ -128,10 +130,10 @@ export default function DashboardPage() {
       <PageTitle title="Dashboard" />
       <PageHeader
         title={`Welcome back, ${firstName(displayName) || 'traveler'} 👋`}
-        description="Your group's travel budget, simplified."
+        description="Everyday budgets and trips, simplified."
         actions={
           <ButtonLink to={paths.newTrip} className="max-sm:hidden" icon={<CirclePlus className="size-5" aria-hidden />}>
-            Create trip
+            Create
           </ButtonLink>
         }
       />
@@ -164,12 +166,17 @@ export default function DashboardPage() {
               <Card>
                 <EmptyState
                   icon={Luggage}
-                  title="No trips yet."
-                  description="Your next adventure starts here. Create a trip, invite your travel buddies, and TripSplit keeps score."
+                  title="Nothing here yet."
+                  description="Start a monthly budget for groceries, food and bills — or plan a trip with friends. TripSplit keeps score."
                   action={
-                    <ButtonLink to={paths.newTrip} size="lg" icon={<CirclePlus className="size-5" aria-hidden />}>
-                      Create Trip
-                    </ButtonLink>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <ButtonLink to={newBudgetPath} size="lg" icon={<CirclePlus className="size-5" aria-hidden />}>
+                        Create a budget
+                      </ButtonLink>
+                      <ButtonLink to={paths.newTrip} size="lg" variant="outline">
+                        Plan a trip
+                      </ButtonLink>
+                    </div>
                   }
                 />
               </Card>
@@ -177,11 +184,13 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
                 <Card>
                   <CardHeader
-                    title="Active trips"
-                    description={summary.activeTrips.length > 0 ? 'Spending against each trip budget' : undefined}
+                    title="Budgets & trips"
+                    description={
+                      summary.activeTrips.length > 0 ? 'Budgets show this month; trips show the whole trip.' : undefined
+                    }
                     action={
-                      <Link to={paths.trips} className="shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700">
-                        All trips
+                      <Link to={paths.trips} className="tap-target shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                        See all
                       </Link>
                     }
                   />
@@ -194,9 +203,9 @@ export default function DashboardPage() {
                       </div>
                     ) : (
                       <p className="text-sm text-slate-500">
-                        No trips in progress right now.{' '}
+                        Nothing running right now.{' '}
                         <Link to={paths.trips} className="font-semibold text-blue-600 hover:text-blue-700">
-                          See upcoming and completed trips
+                          See upcoming trips and archived budgets
                         </Link>
                         .
                       </p>

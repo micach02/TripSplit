@@ -90,7 +90,7 @@ function ChangeCurrencyForm({ trip, budgetMinor, expenseCount, onClose, onChange
               setRate(event.target.value)
               setRateNote('Using your rate.')
             }}
-            className="h-11 w-36 rounded-lg border border-slate-300 bg-white px-3 text-base font-semibold tabular-nums focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-none sm:text-sm"
+            className="h-11 w-36 rounded-lg border border-slate-300 bg-surface px-3 text-base font-semibold tabular-nums focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-none sm:text-sm"
             aria-label={`${target} per ${trip.currency}`}
           />
           <span>{target}</span>
@@ -106,7 +106,7 @@ function ChangeCurrencyForm({ trip, budgetMinor, expenseCount, onClose, onChange
         </p>
       )}
 
-      <Alert tone="warning" title="This converts the whole trip">
+      <Alert tone="warning" title="This converts everything">
         The budget, category budgets, settlements and everyone&apos;s shares of {expenseCount}{' '}
         {expenseCount === 1 ? 'expense' : 'expenses'} are converted at this rate. Each expense keeps its original
         amount and currency.
@@ -130,7 +130,7 @@ interface ChangeCurrencyDialogProps extends ChangeCurrencyFormProps {
 
 export function ChangeCurrencyDialog({ open, ...props }: ChangeCurrencyDialogProps) {
   return (
-    <Dialog open={open} onClose={props.onClose} title="Change trip currency" size="md">
+    <Dialog open={open} onClose={props.onClose} title="Change currency" size="md">
       {open && <ChangeCurrencyForm key={props.trip.currency} {...props} />}
     </Dialog>
   )

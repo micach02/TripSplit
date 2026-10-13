@@ -18,7 +18,7 @@ export const TripAnalyticsPage = lazy(() => import('@/pages/trips/TripAnalyticsP
 export const TripSettingsPage = lazy(() => import('@/pages/trips/TripSettingsPage'))
 export const AddExpensePage = lazy(() => import('@/pages/expenses/AddExpensePage'))
 export const ExpenseFormPage = lazy(() => import('@/pages/expenses/ExpenseFormPage'))
-export const ActivityPage = lazy(() => import('@/pages/activity/ActivityPage'))
+export const MySpendingPage = lazy(() => import('@/pages/spending/MySpendingPage'))
 export const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage'))
 export const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'))
 export const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'))

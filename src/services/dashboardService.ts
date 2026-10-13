@@ -1,16 +1,18 @@
+import { cacheGet, cacheSet, isOfflineError } from '@/lib/offlineCache'
 import { supabase } from '@/lib/supabase'
 import { exchangeRates } from '@/services/exchangeRates'
 import type { Trip } from '@/types/models'
 import { convertMinor, toMinor } from '@/utils/calculations/money'
+import { currentMonth } from '@/utils/budgetPeriod'
 import { getTripStatus } from '@/utils/tripStatus'
 
 export type DashboardTrip = Pick<
   Trip,
-  'id' | 'name' | 'destination' | 'start_date' | 'end_date' | 'currency' | 'status'
+  'id' | 'kind' | 'name' | 'destination' | 'start_date' | 'end_date' | 'currency' | 'status'
 > & {
-  /** Minor units of the trip currency */
+  /** Minor units of the trip currency. Budgets: per month. */
   budget: number
-  /** Minor units of the trip currency */
+  /** Minor units of the trip currency. Budgets: this month. */
   spent: number
 }
 
@@ -27,7 +29,7 @@ export interface DashboardSummary {
   currency: string
   tripCount: number
   activeTrips: DashboardTrip[]
-  /** Totals across active trips, converted into `currency` (minor units). */
+  /** Totals across active trips and this month of every budget, converted into `currency` (minor units). */
   totals: { budget: number; spent: number; remaining: number }
   /** Active trips in another currency that were converted at today's rate. */
   convertedTripCount: number
@@ -39,21 +41,38 @@ export interface DashboardSummary {
   balanceTotals: { owedToMe: number; iOwe: number; complete: boolean }
 }
 
+/** getDashboardSummary, falling back to the last one loaded on this device when offline. */
+export async function getDashboardSummaryOfflineFirst(currency: string, userId: string): Promise<DashboardSummary> {
+  const key = `dashboard:${currency}`
+  try {
+    const summary = await getDashboardSummary(currency, userId)
+    cacheSet(key, summary)
+    return summary
+  } catch (error) {
+    const cached = isOfflineError(error) ? cacheGet<DashboardSummary>(key) : null
+    if (cached) return cached
+    throw error
+  }
+}
+
 export async function getDashboardSummary(currency: string, userId: string): Promise<DashboardSummary> {
-  const [tripsResult, totalsResult, balancesResult] = await Promise.all([
+  const [tripsResult, totalsResult, monthResult, balancesResult] = await Promise.all([
     supabase
       .from('trips')
-      .select('id, name, destination, start_date, end_date, budget, currency, status')
+      .select('id, kind, name, destination, start_date, end_date, budget, currency, status')
       .order('start_date', { ascending: true }),
     supabase.from('trip_totals').select('trip_id, total_spent'),
+    supabase.from('trip_month_totals').select('trip_id, total_spent').eq('month', `${currentMonth()}-01`),
     supabase.from('trip_member_balances').select('trip_id, net').eq('user_id', userId),
   ])
   if (tripsResult.error) throw tripsResult.error
   if (totalsResult.error) throw totalsResult.error
+  if (monthResult.error) throw monthResult.error
   if (balancesResult.error) throw balancesResult.error
 
   const trips = tripsResult.data
   const spentByTrip = new Map(totalsResult.data.map((row) => [row.trip_id, row.total_spent ?? 0]))
+  const spentThisMonth = new Map(monthResult.data.map((row) => [row.trip_id, row.total_spent ?? 0]))
 
   // One rate per foreign currency, fetched in parallel; null when unavailable.
   const foreign = [...new Set(trips.map((trip) => trip.currency).filter((code) => code !== currency))]
@@ -70,7 +89,10 @@ export async function getDashboardSummary(currency: string, userId: string): Pro
     .map((trip) => ({
       ...trip,
       budget: toMinor(trip.budget, trip.currency),
-      spent: toMinor(spentByTrip.get(trip.id) ?? 0, trip.currency),
+      spent: toMinor(
+        (trip.kind === 'budget' ? spentThisMonth.get(trip.id) : spentByTrip.get(trip.id)) ?? 0,
+        trip.currency,
+      ),
     }))
 
   let budget = 0

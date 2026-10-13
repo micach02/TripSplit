@@ -2,13 +2,7 @@ import { supabase } from '@/lib/supabase'
 import { NotPermittedError } from '@/services/memberService'
 import type { PaymentMethod } from '@/types/models'
 
-export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
-  cash: 'Cash',
-  bank_transfer: 'Bank transfer',
-  gcash: 'GCash',
-  paypal: 'PayPal',
-  other: 'Other',
-}
+export { PAYMENT_METHOD_LABELS } from '@/utils/paymentMethods'
 
 export interface SettlementInput {
   tripId: string

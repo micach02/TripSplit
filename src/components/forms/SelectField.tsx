@@ -26,7 +26,7 @@ export function SelectField({ label, error, hint, containerClassName, id, classN
           {children}
         </select>
         <ChevronDown
-          className="pointer-events-none absolute top-1/2 right-3.5 size-5 -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute top-1/2 right-3.5 size-5 -translate-y-1/2 text-slate-500"
           aria-hidden
         />
       </div>

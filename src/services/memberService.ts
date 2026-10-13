@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase'
 import { absoluteUrl, invitePath } from '@/routes/paths'
 import type { TripInvitation } from '@/types/models'
+import { invitationState, type InvitationState } from '@/utils/invitations'
+import type { TripKind } from '@/utils/tripKind'
 
 /** Thrown when RLS silently filtered out a delete/update the user wasn't allowed to make. */
 export class NotPermittedError extends Error {
@@ -33,15 +35,31 @@ export async function inviteToTrip(tripId: string, email: string, name: string):
   return data
 }
 
-/** Pending, unexpired invitations for a trip (visible to its members). */
-export async function listPendingInvitations(tripId: string): Promise<TripInvitation[]> {
+export type ManagedInvitation = TripInvitation & { state: Exclude<InvitationState, 'accepted'> }
+
+/**
+ * Invitations an owner still has to act on: waiting (pending), and recent ones
+ * that didn't work out (expired, declined). Accepted ones are trip members now.
+ */
+export async function listTripInvitations(tripId: string): Promise<ManagedInvitation[]> {
   const { data, error } = await supabase
     .from('trip_invitations')
     .select('*')
     .eq('trip_id', tripId)
-    .eq('status', 'pending')
-    .gt('expires_at', new Date().toISOString())
+    .neq('status', 'accepted')
     .order('created_at', { ascending: false })
+    .limit(50)
+  if (error) throw error
+  const now = new Date()
+  return data.map((invitation) => ({
+    ...invitation,
+    state: invitationState(invitation, now) as ManagedInvitation['state'],
+  }))
+}
+
+/** Sends an invitation again: a fresh 7-day window and a new link (the old link stops working). */
+export async function renewInvitation(invitationId: string): Promise<TripInvitation> {
+  const { data, error } = await supabase.rpc('renew_invitation', { p_invitation_id: invitationId })
   if (error) throw error
   return data
 }
@@ -55,10 +73,12 @@ export async function revokeInvitation(invitationId: string): Promise<void> {
 export interface MyInvitation {
   id: string
   tripId: string
+  tripKind: TripKind
   tripName: string
   destination: string | null
   startDate: string
-  endDate: string
+  /** null for budgets */
+  endDate: string | null
   invitedByName: string
   invitedByAvatarUrl: string | null
   expiresAt: string
@@ -71,6 +91,7 @@ export async function getMyInvitations(): Promise<MyInvitation[]> {
   return data.map((row) => ({
     id: row.id,
     tripId: row.trip_id,
+    tripKind: row.trip_kind,
     tripName: row.trip_name,
     destination: row.destination ?? null,
     startDate: row.start_date,
@@ -95,10 +116,12 @@ export function invitationLink(token: string): string {
 
 export interface InvitationPreview {
   tripId: string
+  tripKind: TripKind
   tripName: string
   destination: string | null
   startDate: string
-  endDate: string
+  /** null for budgets */
+  endDate: string | null
   invitedByName: string
   invitedByAvatarUrl: string | null
   invitedName: string | null
@@ -114,6 +137,7 @@ export async function getInvitationPreview(token: string): Promise<InvitationPre
   if (!row) return null
   return {
     tripId: row.trip_id,
+    tripKind: row.trip_kind,
     tripName: row.trip_name,
     destination: row.destination ?? null,
     startDate: row.start_date,

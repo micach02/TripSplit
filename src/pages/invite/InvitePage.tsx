@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { CalendarDays, Check, Clock, Link2Off, MapPin, PlaneTakeoff, UserCheck, X } from 'lucide-react'
 import { Alert } from '@/components/ui/Alert'
@@ -9,11 +9,13 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PageTitle } from '@/components/ui/PageHeader'
 import { PageLoader } from '@/components/ui/Spinner'
 import { useAsync } from '@/hooks/useAsync'
+import { useInvitations } from '@/hooks/useInvitations'
 import { useToast } from '@/hooks/useToast'
 import { getErrorMessage } from '@/lib/errors'
-import { paths, tripPath } from '@/routes/paths'
+import { clearPendingInvite } from '@/lib/pendingInvite'
+import { invitePath, paths, tripPath } from '@/routes/paths'
 import { acceptInvitationLink, declineInvitationLink, getInvitationPreview } from '@/services/memberService'
-import { formatDateRange } from '@/utils/format'
+import { kindCopy, timeframe } from '@/utils/tripKind'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -39,6 +41,12 @@ export default function InvitePage() {
   const [busy, setBusy] = useState<'accept' | 'decline' | null>(null)
   const [declined, setDeclined] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const invitations = useInvitations()
+
+  // They made it here, so the remembered invite has done its job.
+  useEffect(() => {
+    clearPendingInvite(invitePath(token))
+  }, [token])
 
   if (error && preview === undefined) {
     return (
@@ -56,9 +64,10 @@ export default function InvitePage() {
       <Centered title="Invite link not found">
         <Card>
           <EmptyState
+            headingLevel={1}
             icon={Link2Off}
             title="This invite link doesn’t work"
-            description="It may have been cancelled, or part of the link is missing. Ask the trip owner to share it again."
+            description="It may have been cancelled, or part of the link is missing. Ask whoever sent it to share it again."
             action={backHome}
           />
         </Card>
@@ -71,10 +80,11 @@ export default function InvitePage() {
       <Centered title={preview.tripName}>
         <Card>
           <EmptyState
+            headingLevel={1}
             icon={UserCheck}
             title={`You’re already on ${preview.tripName}`}
-            description="No need to join again — the trip is in your list."
-            action={<ButtonLink to={tripPath(preview.tripId)}>Open trip</ButtonLink>}
+            description={`No need to join again — the ${kindCopy(preview.tripKind).noun} is in your list.`}
+            action={<ButtonLink to={tripPath(preview.tripId)}>Open {kindCopy(preview.tripKind).noun}</ButtonLink>}
           />
         </Card>
       </Centered>
@@ -102,7 +112,7 @@ export default function InvitePage() {
     return (
       <Centered title="Trip invitation">
         <Card>
-          <EmptyState icon={copy.icon} title={copy.title} description={copy.description} action={backHome} />
+          <EmptyState icon={copy.icon} headingLevel={1} title={copy.title} description={copy.description} action={backHome} />
         </Card>
       </Centered>
     )
@@ -114,6 +124,7 @@ export default function InvitePage() {
     try {
       const tripId = await acceptInvitationLink(token)
       toast.success(`You joined ${preview?.tripName ?? 'the trip'}! 🎉`)
+      invitations.refresh()
       navigate(tripPath(tripId), { replace: true })
     } catch (caught) {
       setActionError(getErrorMessage(caught))
@@ -127,6 +138,7 @@ export default function InvitePage() {
     try {
       await declineInvitationLink(token)
       setDeclined(true)
+      invitations.refresh()
     } catch (caught) {
       setActionError(getErrorMessage(caught))
     } finally {
@@ -137,16 +149,16 @@ export default function InvitePage() {
   return (
     <Centered title={`Join ${preview.tripName}`}>
       <Card className="animate-rise-in overflow-hidden">
-        <div className="bg-linear-to-br from-blue-600 to-sky-500 px-5 pt-6 pb-8 text-white sm:px-6">
+        <div className="bg-linear-to-br from-brand-600 to-sky-500 px-5 pt-6 pb-8 text-white sm:px-6">
           <span className="flex size-11 items-center justify-center rounded-2xl bg-white/15">
             <PlaneTakeoff className="size-6" aria-hidden />
           </span>
-          <p className="mt-4 text-sm font-medium text-blue-50">You’re invited to join</p>
+          <p className="mt-4 text-sm font-medium text-white/90">You’re invited to join</p>
           <h1 className="mt-0.5 text-2xl font-extrabold wrap-break-word">{preview.tripName}</h1>
-          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-blue-50">
+          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/90">
             <span className="inline-flex items-center gap-1.5">
               <CalendarDays className="size-4" aria-hidden />
-              {formatDateRange(preview.startDate, preview.endDate)}
+              {timeframe({ kind: preview.tripKind, startDate: preview.startDate, endDate: preview.endDate })}
             </span>
             {preview.destination && (
               <span className="inline-flex items-center gap-1.5">
@@ -163,12 +175,12 @@ export default function InvitePage() {
             <p className="text-sm text-slate-600">
               <span className="font-semibold text-slate-900">{preview.invitedByName}</span> invited{' '}
               {preview.invitedName ? <span className="font-semibold text-slate-900">{preview.invitedName}</span> : 'you'}{' '}
-              to split costs on this trip.
+              to split costs on this {kindCopy(preview.tripKind).noun}.
             </p>
           </div>
 
           <p className="text-sm text-slate-500">
-            Once you join, you’ll see the trip’s expenses and balances, and can add your own.
+            Once you join, you’ll see this {kindCopy(preview.tripKind).noun}’s expenses and balances, and can add your own.
           </p>
 
           {actionError && <Alert tone="error">{actionError}</Alert>}

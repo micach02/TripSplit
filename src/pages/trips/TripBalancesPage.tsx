@@ -8,7 +8,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { PageLoader } from '@/components/ui/Spinner'
+import { PageSkeleton } from '@/components/ui/Skeleton'
 import { memberName, useTripContext } from '@/hooks/useTripContext'
 import { useTripLedger } from '@/hooks/useTripLedger'
 import { useToast } from '@/hooks/useToast'
@@ -49,7 +49,7 @@ export default function TripBalancesPage() {
       </Alert>
     )
   }
-  if (!ledger.data) return <PageLoader label="Calculating balances…" />
+  if (!ledger.data) return <PageSkeleton heading={false} label="Calculating balances…" />
 
   if (ledger.data.expenses.length === 0) {
     return (
@@ -137,7 +137,7 @@ export default function TripBalancesPage() {
       <Card className="overflow-hidden">
         <CardHeader
           title="Everyone's balance"
-          description="Paid minus their share, adjusted for payments made between travelers."
+          description="Paid minus their share, adjusted for payments made between people."
         />
         <ul className="mt-4 divide-y divide-slate-100 border-t border-slate-100">
           {balances.map((balance) => {
@@ -150,7 +150,7 @@ export default function TripBalancesPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-slate-900">
                     {name}
-                    {balance.userId === currentUserId && <span className="ml-1 font-normal text-slate-400">(you)</span>}
+                    {balance.userId === currentUserId && <span className="ml-1 font-normal text-slate-500">(you)</span>}
                   </p>
                   <p className="truncate text-xs text-slate-500 tabular-nums">
                     Paid {money.format(balance.paid)} · Share {money.format(balance.share)}
@@ -160,7 +160,7 @@ export default function TripBalancesPage() {
                   <p
                     className={cn(
                       'font-extrabold tabular-nums',
-                      state === 'receives' ? 'text-emerald-600' : state === 'owes' ? 'text-red-600' : 'text-slate-400',
+                      state === 'receives' ? 'text-emerald-700' : state === 'owes' ? 'text-red-600' : 'text-slate-500',
                     )}
                   >
                     {state === 'settled' ? money.format(0) : money.format(balance.net, { signDisplay: 'always' })}

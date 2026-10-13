@@ -1,7 +1,8 @@
 import { supabase } from '@/lib/supabase'
 import { NotPermittedError } from '@/services/memberService'
 import { removeReceipt, uploadReceipt } from '@/services/storageService'
-import type { Expense, ExpenseSplit, SplitType } from '@/types/models'
+import type { Expense, ExpenseSplit, PaymentMethod, SplitType } from '@/types/models'
+import type { PastExpense } from '@/utils/suggestions'
 
 export type ExpenseSort = 'newest' | 'oldest' | 'highest' | 'lowest'
 
@@ -35,7 +36,7 @@ export const EXPENSE_PAGE_SIZE = 20
 
 const EXPENSE_FIELDS =
   'id, trip_id, category_id, description, amount, currency, exchange_rate, converted_amount, paid_by, ' +
-  'expense_date, notes, receipt_url, created_by, created_at, updated_at, ' +
+  'expense_date, notes, receipt_url, created_by, created_at, updated_at, payment_method, recurring_id, recurring_period, ' +
   'expense_splits(user_id, split_type, value, amount)'
 
 export type ExpenseWithSplits = Omit<Expense, 'participant_ids'> & {
@@ -99,6 +100,8 @@ export async function getExpense(expenseId: string): Promise<ExpenseWithSplits |
 
 export interface ExpenseDraft {
   id?: string
+  /** New expenses: the id to create it with (offline saves sync exactly once) */
+  clientId?: string
   tripId: string
   categoryId: string
   description: string
@@ -110,6 +113,10 @@ export interface ExpenseDraft {
   paidBy: string
   expenseDate: string
   notes: string
+  paymentMethod: PaymentMethod | null
+  /** Adding a recurring reminder's expense: which template and month ('yyyy-MM') */
+  recurringId?: string | null
+  recurringMonth?: string | null
   splits: Array<{
     userId: string
     splitType: SplitType
@@ -133,6 +140,10 @@ export async function saveExpense(draft: ExpenseDraft): Promise<string> {
       paid_by: draft.paidBy,
       expense_date: draft.expenseDate,
       notes: draft.notes,
+      payment_method: draft.paymentMethod ?? '',
+      client_id: draft.id ? null : (draft.clientId ?? null),
+      recurring_id: draft.recurringId ?? null,
+      recurring_period: draft.recurringId && draft.recurringMonth ? `${draft.recurringMonth}-01` : null,
     },
     p_splits: draft.splits.map((split) => ({
       user_id: split.userId,
@@ -152,6 +163,38 @@ export async function deleteExpense(expense: Pick<Expense, 'id' | 'receipt_url'>
   const { data, error } = await supabase.from('expenses').delete().eq('id', expense.id).select('id')
   if (error) throw error
   if (data.length === 0) throw new NotPermittedError()
+}
+
+/** Your own recent expenses in a budget or trip, newest first: the basis of suggestions. */
+export async function listMyRecentExpenses(tripId: string, userId: string, limit = 120): Promise<PastExpense[]> {
+  const { data, error } = await supabase
+    .from('expenses')
+    .select('description, category_id, amount, currency, payment_method, created_at')
+    .eq('trip_id', tripId)
+    .eq('created_by', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data.map((row) => ({
+    description: row.description,
+    categoryId: row.category_id,
+    amount: String(row.amount),
+    currency: row.currency,
+    paymentMethod: row.payment_method,
+    createdAt: row.created_at,
+  }))
+}
+
+/** Every expense matching the filters (for exports), oldest first. */
+export async function listAllExpenses(tripId: string, filters: ExpenseFilters): Promise<ExpenseWithSplits[]> {
+  const pageSize = 500
+  const all: ExpenseWithSplits[] = []
+  for (let offset = 0; offset < 50_000; offset += pageSize) {
+    const page = await listExpenses(tripId, { ...filters, sort: 'oldest' }, offset, pageSize)
+    all.push(...page.items)
+    if (all.length >= page.total || page.items.length < pageSize) break
+  }
+  return all
 }
 
 /** Points an expense at an uploaded receipt (or clears it). */

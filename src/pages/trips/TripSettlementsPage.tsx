@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { PageLoader } from '@/components/ui/Spinner'
+import { PageSkeleton } from '@/components/ui/Skeleton'
 import { memberName, useTripContext } from '@/hooks/useTripContext'
 import { useTripLedger } from '@/hooks/useTripLedger'
 import { useToast } from '@/hooks/useToast'
@@ -48,7 +48,7 @@ export default function TripSettlementsPage() {
   if (ledger.error && !ledger.data) {
     return <Alert tone="error" title="We couldn't load settlements">{getErrorMessage(ledger.error)}</Alert>
   }
-  if (!ledger.data) return <PageLoader label="Loading settlements…" />
+  if (!ledger.data) return <PageSkeleton heading={false} label="Loading settlements…" />
 
   const settlements = ledger.data.settlements
   const total = settlements.reduce((sum, settlement) => sum + settlement.amount, 0)
@@ -57,7 +57,7 @@ export default function TripSettlementsPage() {
     <div className="space-y-6">
       <Card className="overflow-hidden">
         <CardHeader
-          title="Payments between travelers"
+          title="Payments between people"
           description={
             settlements.length > 0
               ? `${settlements.length === 1 ? '1 payment' : `${settlements.length} payments`} · ${money.format(total)} settled`
@@ -123,7 +123,7 @@ export default function TripSettlementsPage() {
                             setDeleteError(null)
                             setToDelete(settlement)
                           }}
-                          className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          className="rounded-lg p-3 text-slate-500 hover:bg-red-50 hover:text-red-600 sm:p-2"
                           aria-label="Remove this payment"
                         >
                           <Trash2 className="size-4" aria-hidden />

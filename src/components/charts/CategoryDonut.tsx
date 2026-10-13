@@ -1,6 +1,7 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { ChartTooltipBox } from '@/components/charts/ChartTooltip'
-import { NEUTRAL, SERIES, SURFACE } from '@/components/charts/chartTheme'
+import type { ChartColors } from '@/components/charts/chartTheme'
+import { useChartColors } from '@/components/charts/useChartColors'
 import { TableView } from '@/components/charts/TableView'
 import type { CategorySpend } from '@/utils/calculations/analytics'
 
@@ -17,20 +18,20 @@ interface Slice {
 }
 
 /** Top five categories + "Other", so the donut never exceeds six segments. */
-function toSlices(categories: CategorySpend[]): Slice[] {
+function toSlices(categories: CategorySpend[], colors: ChartColors): Slice[] {
   const top = categories.slice(0, MAX_SLICES).map((category, index) => ({
     key: category.id,
     label: category.name,
     icon: category.icon,
     amount: category.amount,
     percent: category.percent,
-    color: SERIES[index],
+    color: colors.series[index],
   }))
   const rest = categories.slice(MAX_SLICES)
   if (rest.length === 0) return top
   const amount = rest.reduce((sum, category) => sum + category.amount, 0)
   const percent = Math.round(rest.reduce((sum, category) => sum + category.percent, 0) * 10) / 10
-  return [...top, { key: 'other', label: `Other (${rest.length})`, icon: '•', amount, percent, color: NEUTRAL }]
+  return [...top, { key: 'other', label: `Other (${rest.length})`, icon: '•', amount, percent, color: colors.neutral }]
 }
 
 interface CategoryDonutProps {
@@ -40,12 +41,13 @@ interface CategoryDonutProps {
 }
 
 export function CategoryDonut({ categories, format }: CategoryDonutProps) {
-  const slices = toSlices(categories)
+  const colors = useChartColors()
+  const slices = toSlices(categories, colors)
   const total = slices.reduce((sum, slice) => sum + slice.amount, 0)
 
   return (
     // Donut above, legend below at full width — names never truncate, even in a half-width card.
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <div className="relative mx-auto aspect-square w-full max-w-48" role="img" aria-label="Spending by category, as a donut chart. The list below has every value.">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -61,7 +63,7 @@ export function CategoryDonut({ categories, format }: CategoryDonutProps) {
             >
               {slices.map((slice) => (
                 // 2px surface gap between segments — no outlines
-                <Cell key={slice.key} fill={slice.color} stroke={SURFACE} strokeWidth={2} />
+                <Cell key={slice.key} fill={slice.color} stroke={colors.surface} strokeWidth={2} />
               ))}
             </Pie>
             <Tooltip

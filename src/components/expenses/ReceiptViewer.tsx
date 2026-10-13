@@ -30,7 +30,7 @@ export function ReceiptViewer({ url, onClose, title = 'Receipt' }: ReceiptViewer
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
-      className="m-0 h-dvh max-h-none w-screen max-w-none bg-slate-950/95 p-0 text-white backdrop:bg-slate-950/80"
+      className="m-0 h-dvh max-h-none w-screen max-w-none bg-scrim/95 p-0 text-white backdrop:bg-scrim/80"
     >
       {url && (
         <div className="flex h-full flex-col">

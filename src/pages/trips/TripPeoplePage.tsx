@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/useToast'
 import { paths } from '@/routes/paths'
 
 export default function TripPeoplePage() {
-  const { trip, members, currentUserId, isOwner, reload } = useTripContext()
+  const { trip, members, currentUserId, isOwner, reload, copy, isBudget } = useTripContext()
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -15,13 +15,18 @@ export default function TripPeoplePage() {
     <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <Card className="overflow-hidden">
         <CardHeader
-          title={`Travelers (${members.length})`}
-          description="Everyone here can add expenses, see balances and record settlements."
+          title={`${copy.Members} (${members.length})`}
+          description={
+            isBudget
+              ? 'Everyone here can add expenses to this budget and settle up shared costs.'
+              : 'Everyone here can add expenses, see balances and record settlements.'
+          }
         />
         <div className="mt-4 border-t border-slate-100">
           <MemberList
             tripId={trip.id}
             tripName={trip.name}
+            noun={copy.noun}
             members={members}
             currentUserId={currentUserId}
             isOwner={isOwner}
@@ -30,7 +35,7 @@ export default function TripPeoplePage() {
                 toast.show(`You left ${trip.name}.`)
                 navigate(paths.trips, { replace: true })
               } else {
-                toast.success('Traveler removed.')
+                toast.success(isBudget ? 'Removed from the budget.' : 'Traveler removed.')
                 reload()
               }
             }}
@@ -40,11 +45,11 @@ export default function TripPeoplePage() {
 
       <Card>
         <CardHeader
-          title="Invite friends"
+          title={isBudget ? 'Invite people' : 'Invite friends'}
           description={
             isOwner
               ? 'Create an invite, then send the link by Messenger, Viber, WhatsApp or text.'
-              : 'Only the trip owner can invite people.'
+              : `Only the ${copy.noun} owner can invite people.`
           }
         />
         {isOwner && (

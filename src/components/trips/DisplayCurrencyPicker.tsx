@@ -22,7 +22,7 @@ export function CurrencyViewPicker({ value, onChange, homeCurrency, homeLabel, l
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-8 rounded-full border-0 bg-white px-2 text-xs font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        className="h-8 rounded-full border-0 bg-surface px-2 text-xs font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
         aria-label="Currency to view amounts in"
       >
         {CURRENCY_CODES.map((code) => (

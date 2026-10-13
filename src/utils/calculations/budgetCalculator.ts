@@ -61,24 +61,29 @@ export interface BudgetWarning {
  * The message for the highest threshold reached (50 / 75 / 90 / 100%), or null
  * below 50% or when there's no budget. `formatAmount` formats minor units.
  */
-export function getBudgetWarning(usage: BudgetUsage, formatAmount: (minor: number) => string): BudgetWarning | null {
+export function getBudgetWarning(
+  usage: BudgetUsage,
+  formatAmount: (minor: number) => string,
+  /** What the budget is called: "trip budget", "monthly budget" */
+  noun: string = 'trip budget',
+): BudgetWarning | null {
   if (usage.budget === 0) return null
   if (usage.overBy > 0) {
     return {
       tone: 'danger',
       title: 'Over budget',
-      message: `You're ${formatAmount(usage.overBy)} over your trip budget.`,
+      message: `You're ${formatAmount(usage.overBy)} over your ${noun}.`,
     }
   }
   switch (usage.threshold) {
     case 100:
-      return { tone: 'danger', title: 'Budget used up', message: "You've used 100% of your trip budget." }
+      return { tone: 'danger', title: 'Budget used up', message: `You've used 100% of your ${noun}.` }
     case 90:
-      return { tone: 'warning', title: 'Almost there', message: "You've used 90% of your trip budget." }
+      return { tone: 'warning', title: 'Almost there', message: `You've used 90% of your ${noun}.` }
     case 75:
-      return { tone: 'warning', title: 'Heads up', message: "You've used 75% of your trip budget." }
+      return { tone: 'warning', title: 'Heads up', message: `You've used 75% of your ${noun}.` }
     case 50:
-      return { tone: 'info', title: 'Halfway', message: "You've used half of your trip budget." }
+      return { tone: 'info', title: 'Halfway', message: `You've used half of your ${noun}.` }
     default:
       return null
   }

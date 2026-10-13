@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { format as formatDate, parseISO } from 'date-fns'
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { ChartTooltipBox } from '@/components/charts/ChartTooltip'
-import { AXIS_TICK, BASELINE, formatCompact, GRID, INK_SECONDARY, niceScale, SERIES, SURFACE } from '@/components/charts/chartTheme'
+import { formatCompact, niceScale } from '@/components/charts/chartTheme'
+import { useChartColors } from '@/components/charts/useChartColors'
 import { TableView } from '@/components/charts/TableView'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import type { TripMoney } from '@/hooks/useDisplayCurrency'
@@ -29,10 +30,13 @@ interface SpendingOverTimeProps {
   days: DailySpend[]
   budgetMinor: number
   money: TripMoney
+  /** "across the trip", "in October 2026" */
+  periodLabel?: string
 }
 
-export function SpendingOverTime({ days, budgetMinor, money }: SpendingOverTimeProps) {
+export function SpendingOverTime({ days, budgetMinor, money, periodLabel = 'across the trip' }: SpendingOverTimeProps) {
   const [mode, setMode] = useState<Mode>('daily')
+  const colors = useChartColors()
   const symbol = getCurrency(money.currency).symbol.trim()
   const plot = (minor: number) => toMajor(money.convert(minor), money.currency)
 
@@ -47,19 +51,19 @@ export function SpendingOverTime({ days, budgetMinor, money }: SpendingOverTimeP
   return (
     <div>
       <SegmentedControl label="Show spending" value={mode} options={MODES} onChange={setMode} className="mb-4 max-w-xs" />
-      <div className="h-60" role="img" aria-label={`Spending ${mode === 'daily' ? 'per day' : 'running total'} across the trip. A table view follows.`}>
+      <div className="h-60" role="img" aria-label={`Spending ${mode === 'daily' ? 'per day' : 'running total'} ${periodLabel}. A table view follows.`}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={points} margin={{ top: 12, right: 12, bottom: 0, left: 0 }}>
-            <CartesianGrid vertical={false} stroke={GRID} />
+            <CartesianGrid vertical={false} stroke={colors.grid} />
             <XAxis
               dataKey="label"
-              tick={AXIS_TICK}
+              tick={colors.axisTick}
               tickLine={false}
-              axisLine={{ stroke: BASELINE }}
+              axisLine={{ stroke: colors.baseline }}
               minTickGap={24}
             />
             <YAxis
-              tick={AXIS_TICK}
+              tick={colors.axisTick}
               tickLine={false}
               axisLine={false}
               width={56}
@@ -68,7 +72,7 @@ export function SpendingOverTime({ days, budgetMinor, money }: SpendingOverTimeP
               ticks={scale.ticks}
             />
             <Tooltip
-              cursor={{ stroke: BASELINE, strokeWidth: 1 }}
+              cursor={{ stroke: colors.baseline, strokeWidth: 1 }}
               content={({ active, payload }) => {
                 const point = active ? (payload?.[0]?.payload as Point | undefined) : undefined
                 if (!point) return null
@@ -78,7 +82,7 @@ export function SpendingOverTime({ days, budgetMinor, money }: SpendingOverTimeP
                     rows={[
                       {
                         key: 'spend',
-                        color: SERIES[0],
+                        color: colors.series[0],
                         value: money.format(point.minor),
                         label: mode === 'daily' ? 'spent' : 'spent so far',
                       },
@@ -90,22 +94,22 @@ export function SpendingOverTime({ days, budgetMinor, money }: SpendingOverTimeP
             {showBudget && (
               <ReferenceLine
                 y={budgetValue}
-                stroke={INK_SECONDARY}
+                stroke={colors.inkSecondary}
                 strokeWidth={1}
-                label={{ value: `Budget ${money.format(budgetMinor)}`, position: 'insideTopRight', fill: INK_SECONDARY, fontSize: 12 }}
+                label={{ value: `Budget ${money.format(budgetMinor)}`, position: 'insideTopRight', fill: colors.inkSecondary, fontSize: 12 }}
               />
             )}
             <Area
               type="linear"
               dataKey="value"
-              stroke={SERIES[0]}
+              stroke={colors.series[0]}
               strokeWidth={2}
               strokeLinejoin="round"
               strokeLinecap="round"
-              fill={SERIES[0]}
+              fill={colors.series[0]}
               fillOpacity={0.1}
               dot={false}
-              activeDot={{ r: 5, fill: SERIES[0], stroke: SURFACE, strokeWidth: 2 }}
+              activeDot={{ r: 5, fill: colors.series[0], stroke: colors.surface, strokeWidth: 2 }}
               isAnimationActive={false}
             />
           </AreaChart>

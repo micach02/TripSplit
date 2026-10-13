@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button'
 import { PageTitle } from '@/components/ui/PageHeader'
 import { useToast } from '@/hooks/useToast'
 import { getErrorMessage } from '@/lib/errors'
+import { savePendingInvite } from '@/lib/pendingInvite'
 import { paths } from '@/routes/paths'
 import { isInvitePath, redirectTarget } from '@/routes/redirect'
 import * as authService from '@/services/authService'
@@ -51,6 +52,8 @@ export default function RegisterPage() {
         redirectPath: target ?? paths.dashboard,
       })
       if (needsEmailConfirmation) {
+        // The confirmation email might not bring them straight back to the invite.
+        if (invited && target) savePendingInvite(target, email)
         setConfirmationSentTo(email.trim())
         setSubmitting(false)
       } else {
@@ -95,7 +98,7 @@ export default function RegisterPage() {
         title="Create your account"
         description={
           invited
-            ? 'Create a free account to join the trip you were invited to.'
+            ? 'Create a free account to accept your invitation.'
             : 'Start tracking and splitting trip expenses in minutes.'
         }
       />

@@ -26,8 +26,9 @@ import { resizeImage } from '@/utils/image'
 import { initialTripStatus } from '@/utils/tripStatus'
 
 export default function TripSettingsPage() {
-  const { trip, coverUrl, expenseCount, categories, isOwner, currentUserId, effectiveStatus, budgetMinor, reload } =
+  const { trip, coverUrl, expenseCount, categories, isOwner, currentUserId, effectiveStatus, budgetMinor, reload, isBudget, copy } =
     useTripContext()
+  const completed = effectiveStatus === 'completed'
   const [currencyOpen, setCurrencyOpen] = useState(false)
   const navigate = useNavigate()
   const toast = useToast()
@@ -42,7 +43,7 @@ export default function TripSettingsPage() {
     await updateTrip(trip.id, input)
     if (cover.kind === 'replace') await setTripCover(trip, await resizeImage(cover.file, 1600, 0.82))
     if (cover.kind === 'remove') await clearTripCover(trip)
-    toast.success('Trip details saved.')
+    toast.success(`${copy.Noun} details saved.`)
     setFormVersion((version) => version + 1)
     reload()
   }
@@ -50,9 +51,17 @@ export default function TripSettingsPage() {
   async function toggleCompleted() {
     setStatusBusy(true)
     try {
-      const completing = effectiveStatus !== 'completed'
+      const completing = !completed
       await setTripStatus(trip.id, completing ? 'completed' : initialTripStatus(trip.start_date))
-      toast.success(completing ? 'Trip marked as completed. 🎉' : 'Trip reopened.')
+      toast.success(
+        isBudget
+          ? completing
+            ? 'Budget archived.'
+            : 'Budget reopened.'
+          : completing
+            ? 'Trip marked as completed. 🎉'
+            : 'Trip reopened.',
+      )
       reload()
     } catch (error) {
       toast.error(getErrorMessage(error))
@@ -89,7 +98,7 @@ export default function TripSettingsPage() {
       {isOwner ? (
         <>
           <Card>
-            <CardHeader title="Trip details" />
+            <CardHeader title={`${copy.Noun} details`} />
             <CardBody>
               <TripForm
                 key={formVersion}
@@ -106,7 +115,7 @@ export default function TripSettingsPage() {
           {expenseCount > 0 && (
             <Card>
               <CardHeader
-                title="Trip currency"
+                title="Currency"
                 description={`Everything is tracked in ${trip.currency}. Converting updates the budget, settlements and everyone's shares.`}
               />
               <CardBody>
@@ -120,43 +129,54 @@ export default function TripSettingsPage() {
           <Card>
             <CardHeader
               title="Category budgets"
-              description="Plan how much to spend per category. Analytics compares plan with actual spend."
+              description={
+                isBudget
+                  ? 'Monthly limits per category, e.g. groceries or dining out. Analytics compares each month with them.'
+                  : 'Plan how much to spend per category. Analytics compares plan with actual spend.'
+              }
             />
             <CardBody>
-              <CategoryBudgetsEditor trip={trip} categories={categories} budgetMinor={budgetMinor} />
+              <CategoryBudgetsEditor trip={trip} categories={categories} budgetMinor={budgetMinor} monthly={isBudget} />
             </CardBody>
           </Card>
 
           <Card>
             <CardHeader
-              title="Trip status"
+              title={isBudget ? 'Archive' : 'Trip status'}
               description={
-                effectiveStatus === 'completed'
-                  ? 'This trip is completed. Reopen it to add or change expenses.'
-                  : 'When everyone has settled up, mark the trip as completed.'
+                isBudget
+                  ? completed
+                    ? 'This budget is archived. Reopen it to add or change expenses.'
+                    : 'Not using this budget any more? Archive it — its history stays, and you can reopen it later.'
+                  : completed
+                    ? 'This trip is completed. Reopen it to add or change expenses.'
+                    : 'When everyone has settled up, mark the trip as completed.'
               }
             />
             <CardBody>
               <Button
-                variant={effectiveStatus === 'completed' ? 'outline' : 'secondary'}
+                variant={completed ? 'outline' : 'secondary'}
                 onClick={toggleCompleted}
                 loading={statusBusy}
                 icon={
-                  effectiveStatus === 'completed' ? (
+                  completed ? (
                     <RotateCcw className="size-4" aria-hidden />
                   ) : (
                     <CircleCheckBig className="size-4" aria-hidden />
                   )
                 }
               >
-                {effectiveStatus === 'completed' ? 'Reopen trip' : 'Mark as completed'}
+                {completed ? `Reopen ${copy.noun}` : isBudget ? 'Archive budget' : 'Mark as completed'}
               </Button>
             </CardBody>
           </Card>
         </>
       ) : (
         <Card>
-          <CardHeader title="Trip settings" description="Only the trip owner can change the trip’s details, budget and categories." />
+          <CardHeader
+            title={`${copy.Noun} settings`}
+            description={`Only the ${copy.noun} owner can change its details, budget and categories.`}
+          />
         </Card>
       )}
 
@@ -169,19 +189,25 @@ export default function TripSettingsPage() {
 
       {isOwner ? (
         <Card tone="danger">
-          <CardHeader title="Danger zone" description="Deleting a trip removes its expenses, settlements and members for everyone." />
+          <CardHeader
+            title="Danger zone"
+            description={`Deleting a ${copy.noun} removes its expenses, settlements and members for everyone.`}
+          />
           <CardBody>
             <Button variant="danger" onClick={() => openDialog('delete')} icon={<Trash2 className="size-4" aria-hidden />}>
-              Delete trip
+              Delete {copy.noun}
             </Button>
           </CardBody>
         </Card>
       ) : (
         <Card>
-          <CardHeader title="Leave trip" description="You can leave as long as you haven’t paid for or shared in any expenses." />
+          <CardHeader
+            title={`Leave ${copy.noun}`}
+            description="You can leave as long as you haven’t paid for or shared in any expenses."
+          />
           <CardBody>
             <Button variant="outline" onClick={() => openDialog('leave')} icon={<LogOut className="size-4" aria-hidden />}>
-              Leave trip
+              Leave {copy.noun}
             </Button>
           </CardBody>
         </Card>
@@ -195,7 +221,7 @@ export default function TripSettingsPage() {
         onClose={() => setCurrencyOpen(false)}
         onChanged={(currency) => {
           setCurrencyOpen(false)
-          toast.success(`Trip converted to ${currency}.`)
+          toast.success(`${copy.Noun} converted to ${currency}.`)
           setFormVersion((version) => version + 1)
           reload()
         }}
@@ -208,13 +234,13 @@ export default function TripSettingsPage() {
         loading={dialogBusy}
         error={dialogError}
         title={dialog === 'delete' ? `Delete ${trip.name}?` : `Leave ${trip.name}?`}
-        confirmLabel={dialog === 'delete' ? 'Delete trip' : 'Leave trip'}
+        confirmLabel={dialog === 'delete' ? `Delete ${copy.noun}` : `Leave ${copy.noun}`}
         confirmText={dialog === 'delete' ? trip.name : undefined}
       >
         <p>
           {dialog === 'delete'
-            ? `All ${expenseCount === 1 ? '1 expense' : `${expenseCount} expenses`}, settlements and invitations will be permanently deleted for every traveler. This can’t be undone.`
-            : 'You’ll lose access to this trip. The owner can invite you again later.'}
+            ? `All ${expenseCount === 1 ? '1 expense' : `${expenseCount} expenses`}, settlements and invitations will be permanently deleted for everyone in it. This can’t be undone.`
+            : `You’ll lose access to this ${copy.noun}. The owner can invite you again later.`}
         </p>
       </ConfirmDialog>
     </div>

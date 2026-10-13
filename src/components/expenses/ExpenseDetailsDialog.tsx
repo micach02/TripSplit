@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Repeat2, Trash2 } from 'lucide-react'
 import { CategoryIcon } from '@/components/expenses/CategoryIcon'
 import { ReceiptThumbnail } from '@/components/expenses/ReceiptThumbnail'
 import { Alert } from '@/components/ui/Alert'
@@ -8,16 +8,17 @@ import { Button, ButtonLink } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
 import { memberName, type TripContextValue } from '@/hooks/useTripContext'
 import { getErrorMessage } from '@/lib/errors'
-import { editExpensePath } from '@/routes/paths'
+import { editExpensePath, newExpensePath } from '@/routes/paths'
 import { deleteExpense, type ExpenseWithSplits } from '@/services/expenseService'
 import { SPLIT_METHOD_LABELS } from '@/utils/calculations/expenseSplit'
 import { formatAmount, toMinor } from '@/utils/calculations/money'
 import { formatDate, formatRelative } from '@/utils/format'
+import { PAYMENT_METHOD_LABELS } from '@/utils/paymentMethods'
 import { canEditExpense } from '@/utils/permissions'
 
 type DetailsContext = Pick<
   TripContextValue,
-  'trip' | 'currentUserId' | 'isOwner' | 'memberById' | 'categoryById' | 'money'
+  'trip' | 'currentUserId' | 'isOwner' | 'memberById' | 'categoryById' | 'money' | 'copy' | 'effectiveStatus'
 >
 
 interface ExpenseDetailsDialogProps {
@@ -53,6 +54,8 @@ export function ExpenseDetailsDialog({ expense, context, onClose, onDeleted }: E
   const foreign = expense.currency !== tripCurrency
   const editable = canEditExpense(expense, context.currentUserId, context.isOwner)
   const method = expense.expense_splits[0]?.split_type ?? 'equal'
+  // "Add again" makes a new expense: not on a completed trip or archived budget
+  const canAddAgain = context.effectiveStatus !== 'completed'
 
   async function handleDelete() {
     if (!expense) return
@@ -76,26 +79,37 @@ export function ExpenseDetailsDialog({ expense, context, onClose, onDeleted }: E
       title={expense.description}
       description={`${category?.name ?? 'Expense'} · ${formatDate(expense.expense_date)}`}
       footer={
-        editable ? (
-          confirming ? (
-            <>
-              <Button variant="outline" onClick={() => setConfirming(false)} disabled={deleting}>
-                Keep it
-              </Button>
-              <Button variant="danger" onClick={handleDelete} loading={deleting}>
-                Delete expense
-              </Button>
-            </>
-          ) : (
-            <>
+        confirming ? (
+          <>
+            <Button variant="outline" onClick={() => setConfirming(false)} disabled={deleting}>
+              Keep it
+            </Button>
+            <Button variant="danger" onClick={handleDelete} loading={deleting}>
+              Delete expense
+            </Button>
+          </>
+        ) : editable || canAddAgain ? (
+          <>
+            {editable && (
               <Button variant="ghost" onClick={() => setConfirming(true)} icon={<Trash2 className="size-4" aria-hidden />}>
                 Delete
               </Button>
+            )}
+            {canAddAgain && (
+              <ButtonLink
+                to={`${newExpensePath(context.trip.id)}?from=${expense.id}`}
+                variant={editable ? 'outline' : 'primary'}
+                icon={<Repeat2 className="size-4" aria-hidden />}
+              >
+                Add again
+              </ButtonLink>
+            )}
+            {editable && (
               <ButtonLink to={editExpensePath(context.trip.id, expense.id)} icon={<Pencil className="size-4" aria-hidden />}>
                 Edit
               </ButtonLink>
-            </>
-          )
+            )}
+          </>
         ) : undefined
       }
     >
@@ -103,7 +117,7 @@ export function ExpenseDetailsDialog({ expense, context, onClose, onDeleted }: E
         {error && <Alert tone="error">{error}</Alert>}
         {confirming && (
           <Alert tone="warning" title="Delete this expense?">
-            It will be removed for everyone on the trip and balances will update.
+            It will be removed for everyone in this {context.copy.noun} and balances will update.
           </Alert>
         )}
 
@@ -119,7 +133,7 @@ export function ExpenseDetailsDialog({ expense, context, onClose, onDeleted }: E
               </p>
             )}
             {context.money.converted && (
-              <p className="text-xs text-slate-400 tabular-nums">
+              <p className="text-xs text-slate-500 tabular-nums">
                 Recorded as {formatAmount(expense.converted_amount, tripCurrency)}
               </p>
             )}
@@ -135,6 +149,18 @@ export function ExpenseDetailsDialog({ expense, context, onClose, onDeleted }: E
             <dt className="text-slate-500">Split</dt>
             <dd className="font-semibold text-slate-900">{SPLIT_METHOD_LABELS[method]}</dd>
           </div>
+          {expense.payment_method && (
+            <div>
+              <dt className="text-slate-500">Paid with</dt>
+              <dd className="font-semibold text-slate-900">{PAYMENT_METHOD_LABELS[expense.payment_method]}</dd>
+            </div>
+          )}
+          {expense.recurring_id && (
+            <div>
+              <dt className="text-slate-500">Repeats</dt>
+              <dd className="font-semibold text-slate-900">Monthly</dd>
+            </div>
+          )}
         </dl>
 
         <div>
@@ -150,7 +176,7 @@ export function ExpenseDetailsDialog({ expense, context, onClose, onDeleted }: E
                   <Avatar name={member?.profile.full_name} src={member?.profile.avatar_url} size="sm" decorative />
                   <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800">
                     {memberName(context, split.user_id, { you: true })}
-                    {valueLabel && <span className="ml-1.5 font-normal text-slate-400">{valueLabel}</span>}
+                    {valueLabel && <span className="ml-1.5 font-normal text-slate-500">{valueLabel}</span>}
                   </span>
                   <span className="text-sm font-bold text-slate-900 tabular-nums">
                     {context.money.format(toMinor(split.amount, tripCurrency))}
@@ -175,9 +201,9 @@ export function ExpenseDetailsDialog({ expense, context, onClose, onDeleted }: E
           </div>
         )}
 
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           Added by {memberName(context, expense.created_by, { you: true })} {formatRelative(expense.created_at)}
-          {!editable && ' · Only the person who added or paid for it, or the trip owner, can change it.'}
+          {!editable && ` · Only the person who added or paid for it, or the ${context.copy.noun} owner, can change it.`}
         </p>
       </div>
     </Dialog>

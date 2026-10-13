@@ -16,11 +16,13 @@ interface EditorProps {
   trip: Pick<Trip, 'id' | 'currency'>
   categories: Category[]
   budgetMinor: number
+  /** Everyday budgets: the limits are per month */
+  monthly: boolean
   existing: CategoryBudget[]
   onSaved: () => void
 }
 
-function Editor({ trip, categories, budgetMinor, existing, onSaved }: EditorProps) {
+function Editor({ trip, categories, budgetMinor, monthly, existing, onSaved }: EditorProps) {
   const toast = useToast()
   const byCategory = new Map(existing.map((budget) => [budget.categoryId, budget]))
   const initial = Object.fromEntries(
@@ -79,7 +81,7 @@ function Editor({ trip, categories, budgetMinor, existing, onSaved }: EditorProp
               <label className="flex items-center gap-3 rounded-xl px-3 py-2 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-blue-500">
                 <CategoryIcon icon={category.icon} color={category.color} size="sm" />
                 <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800">{category.name}</span>
-                <span className="text-sm text-slate-400">{symbol}</span>
+                <span className="text-sm text-slate-500">{symbol}</span>
                 <input
                   inputMode="decimal"
                   value={values[category.id] ?? ''}
@@ -88,7 +90,7 @@ function Editor({ trip, categories, budgetMinor, existing, onSaved }: EditorProp
                   aria-invalid={bad ? true : undefined}
                   aria-label={`Planned budget for ${category.name}`}
                   className={cn(
-                    'h-10 w-28 rounded-lg border px-2 text-right text-base font-semibold tabular-nums focus:outline-none sm:text-sm',
+                    'h-11 w-28 rounded-lg border px-2 text-right sm:h-10 text-base font-semibold tabular-nums focus:outline-none sm:text-sm',
                     bad ? 'border-red-400 text-red-700' : 'border-transparent bg-slate-50',
                   )}
                 />
@@ -100,8 +102,8 @@ function Editor({ trip, categories, budgetMinor, existing, onSaved }: EditorProp
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className={cn('text-sm', budgetMinor > 0 && plannedTotal > budgetMinor ? 'font-semibold text-orange-700' : 'text-slate-500')}>
           Planned {formatMoney(plannedTotal, trip.currency)}
-          {budgetMinor > 0 && ` of the ${formatMoney(budgetMinor, trip.currency)} trip budget`}
-          {budgetMinor > 0 && plannedTotal > budgetMinor && ' — more than the trip budget'}
+          {budgetMinor > 0 && ` of the ${formatMoney(budgetMinor, trip.currency)} ${monthly ? 'monthly' : 'trip'} budget`}
+          {budgetMinor > 0 && plannedTotal > budgetMinor && ` — more than the ${monthly ? 'monthly' : 'trip'} budget`}
         </p>
         <Button type="submit" loading={saving}>
           Save category budgets
@@ -116,10 +118,12 @@ export function CategoryBudgetsEditor({
   trip,
   categories,
   budgetMinor,
+  monthly = false,
 }: {
   trip: Pick<Trip, 'id' | 'currency'>
   categories: Category[]
   budgetMinor: number
+  monthly?: boolean
 }) {
   const load = useCallback(() => listCategoryBudgets(trip.id, trip.currency), [trip.id, trip.currency])
   const { data, error, reload } = useAsync(load)
@@ -139,6 +143,7 @@ export function CategoryBudgetsEditor({
       trip={trip}
       categories={categories}
       budgetMinor={budgetMinor}
+      monthly={monthly}
       existing={data}
       onSaved={reload}
     />

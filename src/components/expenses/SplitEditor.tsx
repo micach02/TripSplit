@@ -19,7 +19,7 @@ interface SplitEditorProps {
 
 // No width here: each method sets its own (w-full inside a sized label, or a fixed w-14).
 const inputClasses =
-  'h-11 rounded-lg border border-slate-300 bg-white px-3 text-right text-base font-semibold tabular-nums ' +
+  'h-11 rounded-lg border border-slate-300 bg-surface px-3 text-right text-base font-semibold tabular-nums ' +
   'focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-none sm:text-sm'
 
 function stepShares(value: string, delta: number): string {
@@ -44,7 +44,7 @@ export function SplitEditor({
 
   return (
     <div>
-      <ul className="divide-y divide-slate-100 rounded-2xl bg-white ring-1 ring-slate-200">
+      <ul className="divide-y divide-slate-100 rounded-2xl bg-surface ring-1 ring-slate-200">
         {participants.map((member) => {
           const name = member.userId === currentUserId ? 'You' : member.profile.full_name
           const share = shareByUser.get(member.userId)
@@ -70,7 +70,7 @@ export function SplitEditor({
               {method === 'custom' && (
                 <label className="relative w-32">
                   <span className="sr-only">{`Amount for ${name}`}</span>
-                  <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-slate-400">
+                  <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-slate-500">
                     {symbol}
                   </span>
                   <input
@@ -93,7 +93,7 @@ export function SplitEditor({
                     className={cn(inputClasses, 'w-full pr-8')}
                     placeholder="0"
                   />
-                  <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-slate-400">
+                  <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-slate-500">
                     %
                   </span>
                 </label>
@@ -154,7 +154,7 @@ function SplitStatus({
         aria-live="polite"
         className={cn(
           'mt-2 text-sm font-semibold tabular-nums',
-          remaining === 0 ? 'text-emerald-600' : remaining > 0 ? 'text-orange-600' : 'text-red-600',
+          remaining === 0 ? 'text-emerald-700' : remaining > 0 ? 'text-orange-700' : 'text-red-600',
         )}
       >
         {remaining === 0
@@ -174,9 +174,9 @@ function SplitStatus({
         className={cn(
           'mt-2 text-sm font-semibold tabular-nums',
           remaining === 0 && calculation.ok
-            ? 'text-emerald-600'
+            ? 'text-emerald-700'
             : remaining > 0
-              ? 'text-orange-600'
+              ? 'text-orange-700'
               : 'text-red-600',
         )}
       >

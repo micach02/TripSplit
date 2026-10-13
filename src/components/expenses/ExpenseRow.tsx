@@ -49,13 +49,13 @@ export function ExpenseRow({
             {money.format(toMinor(expense.converted_amount, trip.currency))}
           </p>
           {showOriginal && (
-            <p className="text-xs text-slate-400 tabular-nums">{formatAmount(expense.amount, expense.currency)}</p>
+            <p className="text-xs text-slate-500 tabular-nums">{formatAmount(expense.amount, expense.currency)}</p>
           )}
           {share && (
             <p
               className={
                 share.tone === 'positive'
-                  ? 'text-xs font-semibold text-emerald-600 tabular-nums'
+                  ? 'text-xs font-semibold text-emerald-700 tabular-nums'
                   : 'text-xs font-semibold text-red-600 tabular-nums'
               }
             >

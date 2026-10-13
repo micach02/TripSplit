@@ -23,6 +23,7 @@ export const paths = {
   newTrip: '/trips/new',
   addExpense: '/expenses/new',
   activity: '/activity',
+  spending: '/spending',
   notifications: '/notifications',
   profile: '/profile',
   settings: '/settings',
@@ -34,6 +35,9 @@ export type TripSection = 'expenses' | 'people' | 'balances' | 'settlements' | '
 export function tripPath(tripId: string, section?: TripSection): string {
   return section ? `/trips/${tripId}/${section}` : `/trips/${tripId}`
 }
+
+/** The create page with "Monthly budget" chosen */
+export const newBudgetPath = `${paths.newTrip}?kind=budget`
 
 export function newExpensePath(tripId: string): string {
   return `/trips/${tripId}/expenses/new`

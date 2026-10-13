@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Check, MapPin, X } from 'lucide-react'
+import { Check, Clock, MapPin, X } from 'lucide-react'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { useInvitations } from '@/hooks/useInvitations'
 import { useToast } from '@/hooks/useToast'
+import { cn } from '@/lib/cn'
 import { getErrorMessage } from '@/lib/errors'
 import { tripPath } from '@/routes/paths'
 import { acceptInvitation, declineInvitation, type MyInvitation } from '@/services/memberService'
-import { formatDateRange } from '@/utils/format'
+import { timeframe } from '@/utils/tripKind'
+import { expiryLabel } from '@/utils/invitations'
 
 interface InvitationCardProps {
   invitation: MyInvitation
@@ -19,7 +22,9 @@ interface InvitationCardProps {
 export function InvitationCard({ invitation, onAnswered }: InvitationCardProps) {
   const navigate = useNavigate()
   const toast = useToast()
+  const invitations = useInvitations()
   const [busy, setBusy] = useState<'accept' | 'decline' | null>(null)
+  const expiry = expiryLabel(invitation.expiresAt)
 
   async function accept() {
     setBusy('accept')
@@ -27,6 +32,7 @@ export function InvitationCard({ invitation, onAnswered }: InvitationCardProps) 
       const tripId = await acceptInvitation(invitation.id)
       toast.success(`You joined ${invitation.tripName}! 🎉`)
       onAnswered(invitation.id)
+      invitations.refresh()
       navigate(tripPath(tripId))
     } catch (error) {
       toast.error(getErrorMessage(error))
@@ -40,6 +46,7 @@ export function InvitationCard({ invitation, onAnswered }: InvitationCardProps) 
       await declineInvitation(invitation.id)
       toast.show('Invitation declined.')
       onAnswered(invitation.id)
+      invitations.refresh()
     } catch (error) {
       toast.error(getErrorMessage(error))
       setBusy(null)
@@ -56,13 +63,22 @@ export function InvitationCard({ invitation, onAnswered }: InvitationCardProps) 
           </p>
           <p className="mt-0.5 truncate text-lg font-extrabold text-slate-900">{invitation.tripName}</p>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-slate-500">
-            <span>{formatDateRange(invitation.startDate, invitation.endDate)}</span>
+            <span>{timeframe({ kind: invitation.tripKind, startDate: invitation.startDate, endDate: invitation.endDate })}</span>
             {invitation.destination && (
               <span className="inline-flex items-center gap-1">
                 <MapPin className="size-3.5" aria-hidden />
                 {invitation.destination}
               </span>
             )}
+          </p>
+          <p
+            className={cn(
+              'mt-1.5 inline-flex items-center gap-1 text-xs font-semibold',
+              expiry.soon ? 'text-orange-700' : 'text-slate-500',
+            )}
+          >
+            <Clock className="size-3.5" aria-hidden />
+            {expiry.text}
           </p>
         </div>
       </div>

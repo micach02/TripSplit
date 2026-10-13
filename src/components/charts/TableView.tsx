@@ -12,10 +12,11 @@ interface TableViewProps {
 export function TableView({ caption, columns, rows, label = 'View as table' }: TableViewProps) {
   return (
     <details className="group mt-3">
-      <summary className="cursor-pointer rounded text-xs font-semibold text-blue-600 hover:text-blue-700">
+      <summary className="tap-target w-fit cursor-pointer rounded text-xs font-semibold text-blue-600 hover:text-blue-700">
         {label}
       </summary>
-      <div className="mt-2 max-h-72 overflow-auto rounded-xl ring-1 ring-slate-200">
+      {/* mt-4 clears the summary's enlarged hit area */}
+      <div className="mt-4 max-h-72 overflow-auto rounded-xl ring-1 ring-slate-200">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">{caption}</caption>
           <thead className="sticky top-0 bg-slate-50 text-xs text-slate-500">

@@ -45,8 +45,8 @@ export function Dialog({ open, onClose, title, description, children, footer, si
         if (event.target === event.currentTarget) onClose()
       }}
       className={cn(
-        'open:animate-sheet-in m-0 mt-auto w-full max-w-full overflow-hidden rounded-t-3xl bg-white p-0 text-slate-900 shadow-2xl',
-        'backdrop:bg-slate-900/50 backdrop:backdrop-blur-[2px]',
+        'open:animate-sheet-in m-0 mt-auto w-full max-w-full overflow-hidden rounded-t-3xl bg-surface p-0 text-slate-900 shadow-2xl',
+        'backdrop:bg-scrim/50 backdrop:backdrop-blur-[2px]',
         'sm:m-auto sm:rounded-3xl',
         sizes[size],
       )}
@@ -67,7 +67,7 @@ export function Dialog({ open, onClose, title, description, children, footer, si
             <button
               type="button"
               onClick={onClose}
-              className="-mt-1 -mr-2 rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              className="-mt-2 -mr-3 rounded-full p-3 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
               aria-label="Close"
             >
               <X className="size-5" aria-hidden />

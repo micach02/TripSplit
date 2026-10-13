@@ -1,40 +1,66 @@
 import { Link } from 'react-router'
-import { CalendarDays, ChevronLeft, MapPin, Plus, Users } from 'lucide-react'
+import { CalendarDays, ChevronLeft, MapPin, Plus, TrendingUp, Users, Wallet } from 'lucide-react'
 import { BudgetSummary } from '@/components/trips/BudgetSummary'
 import { ConversionNote, DisplayCurrencyPicker } from '@/components/trips/DisplayCurrencyPicker'
+import { MonthSwitcher } from '@/components/trips/MonthSwitcher'
 import { TripCover } from '@/components/trips/TripCover'
 import { TripStatusBadge } from '@/components/trips/TripStatusBadge'
 import { ButtonLink } from '@/components/ui/Button'
 import type { TripContextValue } from '@/hooks/useTripContext'
 import { newExpensePath, paths } from '@/routes/paths'
-import { formatDateRange } from '@/utils/format'
+import { cn } from '@/lib/cn'
+import { forecastMonthEnd } from '@/utils/calculations/insights'
+import { formatDate } from '@/utils/format'
+import { memberCount, timeframe } from '@/utils/tripKind'
+import { todayIso } from '@/utils/tripStatus'
 
 export function TripHeader({ context }: { context: TripContextValue }) {
-  const { trip, effectiveStatus, coverUrl, members, budgetMinor, spentMinor, money, requestedCurrency, setDisplayCurrency } =
-    context
+  const {
+    trip,
+    effectiveStatus,
+    coverUrl,
+    members,
+    budgetMinor,
+    periodSpentMinor,
+    money,
+    requestedCurrency,
+    setDisplayCurrency,
+    isBudget,
+    period,
+    monthRange,
+    setMonth,
+    availableMinor,
+    carryMinor,
+  } = context
+  const forecast = period ? forecastMonthEnd(periodSpentMinor, period, todayIso()) : null
+  const forecastOver = forecast && availableMinor > 0 ? forecast.projectedMinor - availableMinor : 0
 
   return (
     <header>
       <Link
         to={paths.trips}
-        className="-ml-1 inline-flex items-center gap-1 rounded-lg px-1 py-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
+        className="tap-target -ml-1 inline-flex items-center gap-1 rounded-lg px-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
       >
         <ChevronLeft className="size-4" aria-hidden />
-        My Trips
+        Budgets & Trips
       </Link>
 
-      <div className="mt-2 overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-900/5">
+      <div className="mt-2 overflow-hidden rounded-3xl bg-surface shadow-sm ring-1 ring-slate-900/5">
         <div className="relative">
           <TripCover tripId={trip.id} name={trip.name} url={coverUrl} size="banner" className="h-40 sm:h-48" />
-          <div aria-hidden className="absolute inset-0 bg-linear-to-t from-slate-950/75 via-slate-950/20 to-transparent" />
+          <div aria-hidden className="absolute inset-0 bg-linear-to-t from-scrim/75 via-scrim/20 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-4 text-white sm:p-6">
             <div className="min-w-0">
-              <TripStatusBadge status={effectiveStatus} />
+              <TripStatusBadge status={effectiveStatus} kind={trip.kind} />
               <h1 className="mt-2 truncate text-2xl font-extrabold tracking-tight sm:text-3xl">{trip.name}</h1>
               <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-white/85">
                 <span className="inline-flex items-center gap-1">
-                  <CalendarDays className="size-3.5" aria-hidden />
-                  {formatDateRange(trip.start_date, trip.end_date)}
+                  {isBudget ? (
+                    <Wallet className="size-3.5" aria-hidden />
+                  ) : (
+                    <CalendarDays className="size-3.5" aria-hidden />
+                  )}
+                  {timeframe({ kind: trip.kind, startDate: trip.start_date, endDate: trip.end_date })}
                 </span>
                 {trip.destination && (
                   <span className="inline-flex items-center gap-1">
@@ -44,7 +70,7 @@ export function TripHeader({ context }: { context: TripContextValue }) {
                 )}
                 <span className="inline-flex items-center gap-1">
                   <Users className="size-3.5" aria-hidden />
-                  {members.length} {members.length === 1 ? 'traveler' : 'travelers'}
+                  {memberCount(trip.kind, members.length)}
                 </span>
               </p>
             </div>
@@ -60,10 +86,44 @@ export function TripHeader({ context }: { context: TripContextValue }) {
           </div>
         </div>
         <div className="space-y-3 p-4 sm:p-6">
-          <div className="flex justify-end">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {period && monthRange ? (
+              <MonthSwitcher period={period} range={monthRange} onChange={setMonth} className="-ml-2" />
+            ) : (
+              <span />
+            )}
             <DisplayCurrencyPicker money={money} requested={requestedCurrency} onChange={setDisplayCurrency} />
           </div>
-          <BudgetSummary budgetMinor={budgetMinor} spentMinor={spentMinor} format={(minor) => money.format(minor)} />
+          <BudgetSummary
+            budgetMinor={isBudget ? availableMinor : budgetMinor}
+            spentMinor={periodSpentMinor}
+            format={(minor) => money.format(minor)}
+            budgetLabel={isBudget ? 'Monthly budget' : 'Budget'}
+            // Past months are history; warnings are for the month you're in.
+            showWarning={!isBudget || period?.month === monthRange?.latest}
+          />
+          {isBudget && carryMinor !== 0 && (
+            <p className="text-xs text-slate-500">
+              {carryMinor > 0
+                ? `Includes ${money.format(carryMinor)} left over from earlier months.`
+                : `${money.format(Math.min(-carryMinor, budgetMinor))} less this month: earlier months went over.`}
+            </p>
+          )}
+          {forecast && periodSpentMinor > 0 && (
+            <p
+              className={cn(
+                'flex items-center gap-1.5 text-sm',
+                forecastOver > 0 ? 'font-semibold text-orange-700' : 'text-slate-600',
+              )}
+            >
+              <TrendingUp className="size-4 shrink-0" aria-hidden />
+              <span>
+                At this pace: {money.format(forecast.projectedMinor)} by {formatDate(period?.end ?? '')}
+                {forecastOver > 0 && ` — ${money.format(forecastOver)} over`}
+                {forecast.early && <span className="font-normal text-slate-500"> (early estimate)</span>}
+              </span>
+            </p>
+          )}
           <ConversionNote money={money} requested={requestedCurrency} />
         </div>
       </div>

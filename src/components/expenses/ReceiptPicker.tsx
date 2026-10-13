@@ -4,11 +4,11 @@ import { ReceiptViewer } from '@/components/expenses/ReceiptViewer'
 import { Button } from '@/components/ui/Button'
 import { useAsync } from '@/hooks/useAsync'
 import type { ReceiptChange } from '@/services/expenseService'
-import { AVATAR_ACCEPTED_TYPES, getReceiptUrl } from '@/services/storageService'
+import { getReceiptUrl } from '@/services/storageService'
+import { checkImageFile, IMAGE_ACCEPT as ACCEPT } from '@/utils/image'
 
 /** Raw photos straight off a phone; they're shrunk before upload. */
 const MAX_SOURCE_BYTES = 20 * 1024 * 1024
-const ACCEPT = AVATAR_ACCEPTED_TYPES.join(',')
 
 interface ReceiptPickerProps {
   /** Storage path of the saved receipt (editing) */
@@ -37,16 +37,13 @@ export function ReceiptPicker({ existingPath, value, onChange }: ReceiptPickerPr
   const shown = value.kind === 'replace' ? preview : value.kind === 'remove' ? null : (existingUrl ?? null)
   const hasReceipt = value.kind === 'replace' || (value.kind === 'keep' && Boolean(existingPath))
 
-  function pick(event: ChangeEvent<HTMLInputElement>) {
+  async function pick(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (!(AVATAR_ACCEPTED_TYPES as readonly string[]).includes(file.type)) {
-      setError('Receipts can be JPG, PNG or WEBP photos.')
-      return
-    }
-    if (file.size > MAX_SOURCE_BYTES) {
-      setError('That photo is too large. Choose one under 20 MB.')
+    const problem = await checkImageFile(file, MAX_SOURCE_BYTES)
+    if (problem) {
+      setError(problem)
       return
     }
     setError(null)
@@ -73,7 +70,7 @@ export function ReceiptPicker({ existingPath, value, onChange }: ReceiptPickerPr
             aria-label="View receipt full screen"
           >
             {shown && <img src={shown} alt="Receipt preview" className="size-full object-cover object-top" />}
-            <span className="absolute right-1 bottom-1 rounded-full bg-slate-950/70 p-1 text-white">
+            <span className="absolute right-1 bottom-1 rounded-full bg-scrim/70 p-1 text-white">
               <Maximize2 className="size-3" aria-hidden />
             </span>
           </button>
@@ -123,7 +120,7 @@ export function ReceiptPicker({ existingPath, value, onChange }: ReceiptPickerPr
           <p className="mt-1.5 text-xs text-slate-500">
             {value.kind === 'remove'
               ? 'The receipt will be removed when you save.'
-              : 'Optional. JPG, PNG or WEBP — big photos are shrunk for you.'}
+              : 'Optional. Any photo works — big ones are shrunk for you.'}
           </p>
         </>
       )}

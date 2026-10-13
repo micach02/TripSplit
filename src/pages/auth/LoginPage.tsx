@@ -8,6 +8,7 @@ import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { PageTitle } from '@/components/ui/PageHeader'
 import { getErrorMessage } from '@/lib/errors'
+import { savePendingInvite } from '@/lib/pendingInvite'
 import { paths } from '@/routes/paths'
 import { isInvitePath, redirectTarget } from '@/routes/redirect'
 import * as authService from '@/services/authService'
@@ -18,7 +19,8 @@ type Field = 'email' | 'password'
 export default function LoginPage() {
   // Kept in router state for <PublicOnlyRoute>, and carried over to "Create an account".
   const location = useLocation()
-  const invited = isInvitePath(redirectTarget(location.state))
+  const target = redirectTarget(location.state)
+  const invited = isInvitePath(target)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<FieldErrors<Field>>({})
@@ -37,6 +39,8 @@ export default function LoginPage() {
     if (found) return focusFirstInvalid(form)
 
     setSubmitting(true)
+    // Survives a detour (e.g. "confirm your email first"); cleared on the invite page.
+    if (invited && target) savePendingInvite(target, email)
     try {
       await authService.signIn(email, password)
       // <PublicOnlyRoute> redirects once the session is ready.
@@ -53,7 +57,7 @@ export default function LoginPage() {
         title="Welcome back"
         description={
           invited
-            ? 'Log in to join the trip you were invited to.'
+            ? 'Log in to accept your invitation.'
             : 'Log in to see your trips, budgets and balances.'
         }
       />
@@ -82,7 +86,7 @@ export default function LoginPage() {
           onChange={(event) => setPassword(event.target.value)}
           error={errors.password}
           labelAction={
-            <Link to={paths.forgotPassword} className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+            <Link to={paths.forgotPassword} className="tap-target text-sm font-semibold text-blue-600 hover:text-blue-700">
               Forgot password?
             </Link>
           }

@@ -2,39 +2,50 @@ import { NavLink } from 'react-router'
 import { cn } from '@/lib/cn'
 import { tripPath, type TripSection } from '@/routes/paths'
 
-const tabs: Array<{ section?: TripSection; label: string }> = [
+const tabs: Array<{ section?: TripSection; label: string; settleUp?: boolean }> = [
   { label: 'Overview' },
   { section: 'expenses', label: 'Expenses' },
   { section: 'people', label: 'People' },
-  { section: 'balances', label: 'Balances' },
-  { section: 'settlements', label: 'Settlements' },
+  { section: 'balances', label: 'Balances', settleUp: true },
+  { section: 'settlements', label: 'Settlements', settleUp: true },
   { section: 'analytics', label: 'Analytics' },
   { section: 'settings', label: 'Settings' },
 ]
 
+interface TripTabsProps {
+  tripId: string
+  label: string
+  /** Balances and Settlements only matter with two or more people. */
+  showSettleUp: boolean
+  /** Query string to keep across tabs, e.g. "?month=2026-09" */
+  search?: string
+}
+
 /** Horizontally scrollable on phones. */
-export function TripTabs({ tripId }: { tripId: string }) {
+export function TripTabs({ tripId, label, showSettleUp, search = '' }: TripTabsProps) {
   return (
-    <nav aria-label="Trip sections" className="-mx-4 mt-5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
+    <nav aria-label={label} className="-mx-4 mt-5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
       <ul className="flex min-w-max gap-1 border-b border-slate-200">
-        {tabs.map(({ section, label }) => (
-          <li key={label}>
-            <NavLink
-              to={tripPath(tripId, section)}
-              end={!section}
-              className={({ isActive }) =>
-                cn(
-                  '-mb-px flex h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors',
-                  isActive
-                    ? 'border-blue-600 text-blue-700'
-                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800',
-                )
-              }
-            >
-              {label}
-            </NavLink>
-          </li>
-        ))}
+        {tabs
+          .filter((tab) => showSettleUp || !tab.settleUp)
+          .map(({ section, label: tabLabel }) => (
+            <li key={tabLabel}>
+              <NavLink
+                to={`${tripPath(tripId, section)}${search}`}
+                end={!section}
+                className={({ isActive }) =>
+                  cn(
+                    '-mb-px flex h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors',
+                    isActive
+                      ? 'border-blue-600 text-blue-700'
+                      : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800',
+                  )
+                }
+              >
+                {tabLabel}
+              </NavLink>
+            </li>
+          ))}
       </ul>
     </nav>
   )

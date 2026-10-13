@@ -5,7 +5,8 @@ const AVATAR_BUCKET = 'tripsplit-avatars'
 
 /** Matches the bucket's limits in supabase/migrations/*_storage_avatars.sql. */
 export const AVATAR_MAX_BYTES = 2 * 1024 * 1024
-export const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
+// The buckets accept JPEG/PNG/WEBP only; pickers take any photo the browser can
+// open and re-encode it as JPEG first (utils/image.ts).
 
 const EXTENSIONS: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
 

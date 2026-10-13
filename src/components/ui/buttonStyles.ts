@@ -14,11 +14,11 @@ const base =
   'focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-55'
 
 const variants: Record<ButtonVariant, string> = {
-  primary: 'bg-blue-600 text-white shadow-sm shadow-blue-600/20 hover:bg-blue-700 active:bg-blue-800',
+  primary: 'bg-brand-600 text-white shadow-sm shadow-blue-600/20 hover:bg-brand-700 active:bg-brand-800',
   secondary: 'bg-blue-50 text-blue-700 hover:bg-blue-100 active:bg-blue-200',
-  outline: 'bg-white text-slate-700 ring-1 ring-slate-300 ring-inset hover:bg-slate-50 active:bg-slate-100',
+  outline: 'bg-surface text-slate-700 ring-1 ring-slate-300 ring-inset hover:bg-slate-50 active:bg-slate-100',
   ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200',
-  danger: 'bg-red-600 text-white shadow-sm shadow-red-600/20 hover:bg-red-700 active:bg-red-800 focus-visible:outline-red-600',
+  danger: 'bg-danger-600 text-white shadow-sm shadow-red-600/20 hover:bg-danger-700 active:bg-danger-800 focus-visible:outline-red-600',
 }
 
 // Every size keeps a ≥44px touch target on touch screens.
