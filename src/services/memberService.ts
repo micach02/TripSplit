@@ -25,10 +25,54 @@ export async function removeMember(tripId: string, userId: string): Promise<void
   if (data.length === 0) throw new NotPermittedError()
 }
 
-export async function inviteToTrip(tripId: string, email: string, name: string): Promise<TripInvitation> {
+/** Adds someone by name (no account needed); returns their id, used like any member's. */
+export async function addPerson(tripId: string, name: string): Promise<string> {
+  const { data, error } = await supabase.rpc('add_trip_person', { p_trip_id: tripId, p_name: name })
+  if (error) throw error
+  return data
+}
+
+/**
+ * Adds several people by name, one at a time so a clash (e.g. a name already
+ * there) doesn't stop the rest. Returns the names that couldn't be added.
+ */
+export async function addPeople(tripId: string, names: readonly string[]): Promise<string[]> {
+  const failed: string[] = []
+  for (const name of names) {
+    try {
+      await addPerson(tripId, name)
+    } catch {
+      failed.push(name)
+    }
+  }
+  return failed
+}
+
+/** The owner, or whoever added them, can rename someone added by name. */
+export async function renamePerson(personId: string, name: string): Promise<void> {
+  const { error } = await supabase.rpc('rename_trip_person', { p_person_id: personId, p_name: name })
+  if (error) throw error
+}
+
+/** Removes someone added by name (refused once they have expenses or settlements). */
+export async function removePerson(personId: string): Promise<void> {
+  const { error } = await supabase.rpc('remove_trip_person', { p_person_id: personId })
+  if (error) throw error
+}
+
+/**
+ * Creates an invitation. With `personId` (someone added by name), whoever
+ * accepts takes their place: what was recorded for them becomes theirs.
+ */
+export async function inviteToTrip(tripId: string, email: string, name: string, personId?: string): Promise<TripInvitation> {
   const { data, error } = await supabase
     .from('trip_invitations')
-    .insert({ trip_id: tripId, invited_email: email.trim().toLowerCase(), invited_name: name.trim() || null })
+    .insert({
+      trip_id: tripId,
+      invited_email: email.trim().toLowerCase(),
+      invited_name: name.trim() || null,
+      person_id: personId ?? null,
+    })
     .select('*')
     .single()
   if (error) throw error
@@ -127,6 +171,8 @@ export interface InvitationPreview {
   invitedName: string | null
   status: 'pending' | 'accepted' | 'declined' | 'expired'
   alreadyMember: boolean
+  /** Set when the invite is for someone added by name: whose place they take */
+  personName: string | null
 }
 
 /** What an invite link shows before joining; null when the link is unknown. */
@@ -147,6 +193,7 @@ export async function getInvitationPreview(token: string): Promise<InvitationPre
     invitedName: row.invited_name ?? null,
     status: row.status as InvitationPreview['status'],
     alreadyMember: row.already_member,
+    personName: row.person_name ?? null,
   }
 }
 

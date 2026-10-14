@@ -4,6 +4,7 @@ import type { TripDetails, TripMemberWithProfile } from '@/services/tripService'
 import type { Category } from '@/types/models'
 import { clampMonth, currentMonth, monthOf, monthPeriod, type MonthPeriod } from '@/utils/budgetPeriod'
 import { availableForMonth } from '@/utils/calculations/insights'
+import { shortName } from '@/utils/people'
 import { kindCopy, type KindCopy } from '@/utils/tripKind'
 
 /** What a trip's (or budget's) tabs receive from <TripLayout>. */
@@ -109,6 +110,20 @@ export function buildTripContext(
 
 export function useTripContext(): TripContextValue {
   return useOutletContext<TripContextValue>()
+}
+
+/** memberName shortened for tight spots: a first name, unless someone else on the trip shares it. */
+export function memberShortName(
+  context: Pick<TripContextValue, 'memberById' | 'currentUserId'>,
+  userId: string | null,
+  options: { you?: boolean } = {},
+): string {
+  const member = userId ? context.memberById.get(userId) : undefined
+  if (!member || (options.you && userId === context.currentUserId)) return memberName(context, userId, options)
+  const others = [...context.memberById.values()]
+    .filter((other) => other.userId !== userId)
+    .map((other) => other.profile.full_name)
+  return shortName(member.profile.full_name, others)
 }
 
 /** Display name for a user id on this trip ("You" for the current user when `you` is set). */

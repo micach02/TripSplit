@@ -179,6 +179,13 @@ export default function InvitePage() {
             </p>
           </div>
 
+          {preview.personName ? (
+            <p className="rounded-2xl bg-blue-50 p-3 text-sm text-slate-700 ring-1 ring-blue-100">
+              You’ll take <span className="font-semibold text-slate-900">{preview.personName}</span>’s place on this{' '}
+              {kindCopy(preview.tripKind).noun}: the expenses and balances already recorded for {preview.personName} become
+              yours.
+            </p>
+          ) : null}
           <p className="text-sm text-slate-500">
             Once you join, you’ll see this {kindCopy(preview.tripKind).noun}’s expenses and balances, and can add your own.
           </p>
@@ -201,7 +208,7 @@ export default function InvitePage() {
               disabled={busy !== null}
               icon={<Check className="size-4" aria-hidden />}
             >
-              Join trip
+              {`Join ${kindCopy(preview.tripKind).noun}`}
             </Button>
           </div>
         </div>

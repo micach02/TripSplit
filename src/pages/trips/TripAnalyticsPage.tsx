@@ -12,14 +12,13 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { PageSkeleton } from '@/components/ui/Skeleton'
-import { memberName, useTripContext } from '@/hooks/useTripContext'
+import { memberShortName, useTripContext } from '@/hooks/useTripContext'
 import { useTripLedger } from '@/hooks/useTripLedger'
 import { getErrorMessage } from '@/lib/errors'
 import { tripPath } from '@/routes/paths'
 import { compareCategoryBudgets, spendingByCategory, spendingByDay } from '@/utils/calculations/analytics'
 import { calculateBalances } from '@/utils/calculations/balanceCalculator'
 import { budgetTone, getBudgetUsage } from '@/utils/calculations/budgetCalculator'
-import { firstName } from '@/utils/format'
 import { elapsedDays, monthPeriod, recentMonths, shiftMonth } from '@/utils/budgetPeriod'
 import { categoryChanges } from '@/utils/calculations/insights'
 import { todayIso, tripLengthInDays } from '@/utils/tripStatus'
@@ -67,7 +66,7 @@ export default function TripAnalyticsPage() {
       days: spendingByDay(items, chartStart, chartEnd < chartStart ? chartStart : chartEnd),
       people: members.map((member) => ({
         userId: member.userId,
-        name: firstName(memberName(context, member.userId, { you: true })),
+        name: memberShortName(context, member.userId, { you: true }),
         paid: byUser.get(member.userId)?.paid ?? 0,
         share: byUser.get(member.userId)?.share ?? 0,
       })),

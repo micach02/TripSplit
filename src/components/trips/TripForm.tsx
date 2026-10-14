@@ -4,6 +4,7 @@ import { CurrencySelect } from '@/components/forms/CurrencySelect'
 import { focusFirstInvalid } from '@/components/forms/controlStyles'
 import { TextareaField } from '@/components/forms/TextareaField'
 import { TextField } from '@/components/forms/TextField'
+import { PeopleInput } from '@/components/members/PeopleInput'
 import { TripCover } from '@/components/trips/TripCover'
 import type { CoverChange, TripFormValues } from '@/components/trips/tripFormValues'
 import { Alert } from '@/components/ui/Alert'
@@ -114,6 +115,7 @@ export function TripForm({ tripId, initial, coverUrl = null, currencyLocked = fa
           rollover: budgetKind && values.rollover,
           budget: toDecimalString(budget.minor, values.currency),
           currency: values.currency,
+          people: values.people,
         },
         cover,
       )
@@ -242,6 +244,16 @@ export function TripForm({ tripId, initial, coverUrl = null, currencyLocked = fa
             </span>
           </span>
         </label>
+      )}
+
+      {/* Only when creating: afterwards, people are managed on the People tab. */}
+      {!tripId && (
+        <PeopleInput
+          label={budgetKind ? 'Who shares this budget? (optional)' : 'Who’s on this trip? (optional)'}
+          hint="Just names — they don’t need an account, and you’re included already. You can add more later."
+          value={values.people}
+          onChange={set('people')}
+        />
       )}
 
       <TextareaField

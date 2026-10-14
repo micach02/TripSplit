@@ -3,7 +3,7 @@ import { Check } from 'lucide-react'
 import { Avatar } from '@/components/ui/Avatar'
 import { cn } from '@/lib/cn'
 import type { TripMemberWithProfile } from '@/services/tripService'
-import { firstName } from '@/utils/format'
+import { shortName } from '@/utils/people'
 
 interface BaseProps {
   label: string
@@ -12,8 +12,11 @@ interface BaseProps {
   action?: ReactNode
 }
 
-function chipName(member: TripMemberWithProfile, currentUserId: string): string {
-  return member.userId === currentUserId ? 'You' : firstName(member.profile.full_name) || 'Traveler'
+/** "You", or a first name — the full name when someone else here shares it. */
+function chipName(member: TripMemberWithProfile, members: TripMemberWithProfile[], currentUserId: string): string {
+  if (member.userId === currentUserId) return 'You'
+  const others = members.filter((other) => other.userId !== member.userId).map((other) => other.profile.full_name)
+  return shortName(member.profile.full_name, others) || 'Traveler'
 }
 
 const chipClasses = (selected: boolean) =>
@@ -51,7 +54,7 @@ export function MemberRadioChips({
               className={chipClasses(selected)}
             >
               <Avatar name={member.profile.full_name} src={member.profile.avatar_url} size="sm" decorative />
-              {chipName(member, currentUserId)}
+              {chipName(member, members, currentUserId)}
             </button>
           )
         })}
@@ -98,7 +101,7 @@ export function MemberCheckboxChips({
                   </span>
                 )}
               </span>
-              {chipName(member, currentUserId)}
+              {chipName(member, members, currentUserId)}
             </button>
           )
         })}

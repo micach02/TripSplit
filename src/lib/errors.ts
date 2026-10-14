@@ -22,6 +22,11 @@ const DATABASE_RULES: Record<string, string> = {
   not_permitted: "You don't have permission to do that.",
   member_has_activity:
     'This person has expenses or settlements on this trip, so they can’t be removed. Their history must stay intact.',
+  person_name_invalid: 'Enter a name of up to 60 characters.',
+  person_name_taken: 'Someone with that name is already on this trip. Add a surname or initial to tell them apart.',
+  person_not_found: 'That person isn’t on this trip anymore.',
+  person_in_recurring: 'This person is part of a recurring expense. Remove them from it first.',
+  already_on_trip: 'You’re already on this trip, so you can’t take over a name on it. Ask the owner to cancel this invite.',
   invitation_not_found: 'This invitation isn’t for your account, or it no longer exists.',
   invitation_not_pending: 'This invitation has already been answered.',
   invitation_expired: 'This invitation has expired. Ask the trip owner to send a new one.',

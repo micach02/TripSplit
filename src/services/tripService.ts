@@ -19,7 +19,8 @@ export interface TripMemberWithProfile {
   userId: string
   role: MemberRole
   joinedAt: string
-  profile: Pick<Profile, 'id' | 'full_name' | 'email' | 'avatar_url'>
+  /** `guest_trip_id` is set for someone added by name (no account, no email). */
+  profile: Pick<Profile, 'id' | 'full_name' | 'email' | 'avatar_url' | 'guest_trip_id' | 'added_by'>
 }
 
 /**
@@ -71,6 +72,8 @@ export interface TripInput {
   currency: string
   /** Budgets: carry unspent money (or overspending) into the next month */
   rollover?: boolean
+  /** New trips: names to add once it exists (see memberService.addPeople) */
+  people?: string[]
 }
 
 /** listTrips, falling back to the last list loaded on this device when offline. */
@@ -128,7 +131,7 @@ export async function getTripDetails(tripId: string): Promise<TripDetails> {
     supabase.from('trips').select('*').eq('id', tripId).maybeSingle(),
     supabase
       .from('trip_members')
-      .select('id, user_id, role, joined_at, profiles(id, full_name, email, avatar_url)')
+      .select('id, user_id, role, joined_at, profiles(id, full_name, email, avatar_url, guest_trip_id, added_by)')
       .eq('trip_id', tripId)
       .order('joined_at'),
     supabase.from('categories').select('*').eq('trip_id', tripId).order('sort_order').order('name'),
@@ -162,7 +165,14 @@ export async function getTripDetails(tripId: string): Promise<TripDetails> {
       userId: member.user_id,
       role: member.role,
       joinedAt: member.joined_at,
-      profile: member.profiles ?? { id: member.user_id, full_name: 'Traveler', email: '', avatar_url: null },
+      profile: member.profiles ?? {
+        id: member.user_id,
+        full_name: 'Traveler',
+        email: null,
+        avatar_url: null,
+        guest_trip_id: null,
+        added_by: null,
+      },
     })),
     categories: categoriesResult.data,
   }

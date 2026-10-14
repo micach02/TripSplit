@@ -138,23 +138,21 @@ export default function TripOverviewPage() {
             {members.length === 1 ? (
               <div className="text-center">
                 <p className="font-semibold text-slate-900">
-                  {isBudget ? 'Just you for now.' : 'Invite your travel buddies.'}
+                  {isBudget ? 'Just you for now.' : 'Who’s on this trip?'}
                 </p>
                 <p className="mt-1 text-sm text-slate-500">
                   {isBudget
-                    ? 'Share this budget with your household or housemates to split shared costs.'
-                    : 'Expenses can only be split with people on the trip.'}
+                    ? 'Add your household or housemates by name to split shared costs.'
+                    : 'Add your travel buddies by name to split expenses with them. They don’t need an account.'}
                 </p>
-                {isOwner && (
-                  <ButtonLink
-                    to={tripPath(trip.id, 'people')}
-                    variant="secondary"
-                    className="mt-4"
-                    icon={<UserPlus className="size-4" aria-hidden />}
-                  >
-                    {isBudget ? 'Invite people' : 'Invite Friends'}
-                  </ButtonLink>
-                )}
+                <ButtonLink
+                  to={tripPath(trip.id, 'people')}
+                  variant="secondary"
+                  className="mt-4"
+                  icon={<UserPlus className="size-4" aria-hidden />}
+                >
+                  Add people
+                </ButtonLink>
               </div>
             ) : (
               <ul className="space-y-3">

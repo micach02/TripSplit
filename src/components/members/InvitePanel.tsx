@@ -1,4 +1,4 @@
-import { useCallback, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useId, useState, type FormEvent } from 'react'
 import { Check, Clock, Copy, Link2, Mail, RotateCcw, Send, Share2, X, XCircle } from 'lucide-react'
 import { focusFirstInvalid } from '@/components/forms/controlStyles'
 import { TextField } from '@/components/forms/TextField'
@@ -41,8 +41,18 @@ function closedInvitations(all: ManagedInvitation[]): ManagedInvitation[] {
   })
 }
 
+interface InvitePanelProps {
+  tripId: string
+  tripName: string
+  /** Someone added by name to invite: whoever accepts takes their place. */
+  person?: { id: string; name: string } | null
+  /** The invite for `person` was created, or the owner chose to invite someone else. */
+  onPersonDone?: () => void
+}
+
 /** Owner tools: invite people, share links, and follow invitations through to joining or not. */
-export function InvitePanel({ tripId, tripName }: { tripId: string; tripName: string }) {
+export function InvitePanel({ tripId, tripName, person = null, onPersonDone }: InvitePanelProps) {
+  const emailId = useId()
   const toast = useToast()
   const { profile } = useAuth()
   const load = useCallback(() => listTripInvitations(tripId), [tripId])
@@ -56,14 +66,26 @@ export function InvitePanel({ tripId, tripName }: { tripId: string; tripName: st
   const [justCreated, setJustCreated] = useState<string | null>(null)
   const [showLink, setShowLink] = useState<string | null>(null)
 
+  // Straight to the email when "Invite to the app" was chosen for someone on the list.
+  useEffect(() => {
+    if (person) document.getElementById(emailId)?.focus()
+  }, [person, emailId])
+
   const pending = (data ?? []).filter((invitation) => invitation.state === 'pending')
   const closed = closedInvitations(data ?? [])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = event.currentTarget
+    const invitedName = person?.name ?? name.trim()
     const found = {
-      name: !name.trim() ? 'Enter their name.' : name.trim().length > 100 ? 'Keep the name under 100 characters.' : undefined,
+      name: person
+        ? undefined
+        : !invitedName
+          ? 'Enter their name.'
+          : invitedName.length > 100
+            ? 'Keep the name under 100 characters.'
+            : undefined,
       email: validateEmail(email) ?? undefined,
     }
     setErrors(found)
@@ -71,12 +93,13 @@ export function InvitePanel({ tripId, tripName }: { tripId: string; tripName: st
 
     setSending(true)
     try {
-      const invitation = await inviteToTrip(tripId, email, name)
-      toast.success(`Invite for ${name.trim()} is ready — send them the link.`)
+      const invitation = await inviteToTrip(tripId, email, invitedName, person?.id)
+      toast.success(`Invite for ${invitedName} is ready — send them the link.`)
       setJustCreated(invitation.id)
       setName('')
       setEmail('')
       reload()
+      onPersonDone?.()
     } catch (caught) {
       // 23505: there's already a pending invitation for this email
       setErrors({
@@ -149,17 +172,34 @@ export function InvitePanel({ tripId, tripName }: { tripId: string; tripName: st
   return (
     <div className="space-y-5">
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        {person ? (
+          <div className="rounded-2xl bg-blue-50 p-3 text-sm ring-1 ring-blue-100">
+            <p className="font-semibold text-slate-900">Inviting {person.name}</p>
+            <p className="mt-0.5 text-slate-600">
+              When they accept, everything recorded for {person.name} becomes theirs.
+            </p>
+            <button
+              type="button"
+              onClick={onPersonDone}
+              className="tap-target mt-1 font-semibold text-blue-600 hover:text-blue-700"
+            >
+              Invite someone else instead
+            </button>
+          </div>
+        ) : (
+          <TextField
+            label="Name"
+            autoComplete="off"
+            autoCapitalize="words"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            error={errors.name}
+            placeholder="John Cruz"
+            maxLength={100}
+          />
+        )}
         <TextField
-          label="Name"
-          autoComplete="off"
-          autoCapitalize="words"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          error={errors.name}
-          placeholder="John Cruz"
-          maxLength={100}
-        />
-        <TextField
+          id={emailId}
           label="Email"
           type="email"
           inputMode="email"

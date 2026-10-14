@@ -61,7 +61,8 @@ function ProfileForm({ profile }: { profile: Profile }) {
       <TextField
         label="Email"
         type="email"
-        value={profile.email}
+        // Only people added by name lack an email, and they can't sign in.
+        value={profile.email ?? ''}
         readOnly
         disabled
         hint="Used to log in and to receive trip invitations."

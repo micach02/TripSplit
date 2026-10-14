@@ -15,12 +15,25 @@ export interface TripFormValues {
   description: string
   /** Budgets: carry unspent money into the next month */
   rollover: boolean
+  /** New trips only: people to add by name once it's created */
+  people: string[]
 }
 
 export type CoverChange = { kind: 'keep' } | { kind: 'remove' } | { kind: 'replace'; file: File }
 
 export function emptyTripFormValues(currency: string, kind: TripKind = 'trip'): TripFormValues {
-  return { kind, name: '', destination: '', startDate: '', endDate: '', budget: '', currency, description: '', rollover: false }
+  return {
+    kind,
+    name: '',
+    destination: '',
+    startDate: '',
+    endDate: '',
+    budget: '',
+    currency,
+    description: '',
+    rollover: false,
+    people: [],
+  }
 }
 
 export function tripToFormValues(
@@ -37,5 +50,6 @@ export function tripToFormValues(
     currency: trip.currency,
     description: trip.description ?? '',
     rollover: trip.rollover,
+    people: [],
   }
 }

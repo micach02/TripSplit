@@ -1,10 +1,9 @@
 import { Paperclip } from 'lucide-react'
 import { CategoryIcon } from '@/components/expenses/CategoryIcon'
-import { memberName, type TripContextValue } from '@/hooks/useTripContext'
+import { memberShortName, type TripContextValue } from '@/hooks/useTripContext'
 import type { ExpenseWithSplits } from '@/services/expenseService'
 import { formatAmount, toMinor } from '@/utils/calculations/money'
 import { yourShare } from '@/utils/expenseShare'
-import { firstName } from '@/utils/format'
 
 export type ExpenseRowContext = Pick<TripContextValue, 'trip' | 'currentUserId' | 'memberById' | 'categoryById' | 'money'>
 
@@ -40,7 +39,7 @@ export function ExpenseRow({
             )}
           </p>
           <p className="truncate text-sm text-slate-500">
-            {firstName(memberName(context, expense.paid_by, { you: true }))} paid ·{' '}
+            {memberShortName(context, expense.paid_by, { you: true })} paid ·{' '}
             {people === 1 ? '1 person' : `${people} people`}
           </p>
         </div>

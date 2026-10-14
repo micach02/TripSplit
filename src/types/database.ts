@@ -356,36 +356,49 @@ export type Database = {
       }
       profiles: {
         Row: {
+          added_by: string | null
           avatar_url: string | null
           created_at: string
           default_trip_id: string | null
-          email: string
+          email: string | null
           full_name: string
+          guest_trip_id: string | null
           id: string
           preferred_currency: string
           updated_at: string
         }
         Insert: {
+          added_by?: string | null
           avatar_url?: string | null
           created_at?: string
           default_trip_id?: string | null
-          email: string
+          email?: string | null
           full_name: string
+          guest_trip_id?: string | null
           id: string
           preferred_currency?: string
           updated_at?: string
         }
         Update: {
+          added_by?: string | null
           avatar_url?: string | null
           created_at?: string
           default_trip_id?: string | null
-          email?: string
+          email?: string | null
           full_name?: string
+          guest_trip_id?: string | null
           id?: string
           preferred_currency?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_default_trip_id_fkey"
             columns: ["default_trip_id"]
@@ -396,6 +409,20 @@ export type Database = {
           {
             foreignKeyName: "profiles_default_trip_id_fkey"
             columns: ["default_trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_guest_trip_id_fkey"
+            columns: ["guest_trip_id"]
+            isOneToOne: false
+            referencedRelation: "trip_totals"
+            referencedColumns: ["trip_id"]
+          },
+          {
+            foreignKeyName: "profiles_guest_trip_id_fkey"
+            columns: ["guest_trip_id"]
             isOneToOne: false
             referencedRelation: "trips"
             referencedColumns: ["id"]
@@ -601,6 +628,7 @@ export type Database = {
           invited_by: string
           invited_email: string
           invited_name: string | null
+          person_id: string | null
           status: Database["tripsplit"]["Enums"]["invitation_status"]
           token: string
           trip_id: string
@@ -612,6 +640,7 @@ export type Database = {
           invited_by?: string
           invited_email: string
           invited_name?: string | null
+          person_id?: string | null
           status?: Database["tripsplit"]["Enums"]["invitation_status"]
           token?: string
           trip_id: string
@@ -623,6 +652,7 @@ export type Database = {
           invited_by?: string
           invited_email?: string
           invited_name?: string | null
+          person_id?: string | null
           status?: Database["tripsplit"]["Enums"]["invitation_status"]
           token?: string
           trip_id?: string
@@ -631,6 +661,13 @@ export type Database = {
           {
             foreignKeyName: "trip_invitations_invited_by_fkey"
             columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_invitations_person_id_fkey"
+            columns: ["person_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -927,6 +964,10 @@ export type Database = {
     Functions: {
       accept_invitation: { Args: { p_invitation_id: string }; Returns: string }
       accept_invitation_link: { Args: { p_token: string }; Returns: string }
+      add_trip_person: {
+        Args: { p_name: string; p_trip_id: string }
+        Returns: string
+      }
       change_trip_currency: {
         Args: { p_currency: string; p_rate: number; p_trip_id: string }
         Returns: undefined
@@ -939,11 +980,13 @@ export type Database = {
       ensure_profile: {
         Args: never
         Returns: {
+          added_by: string | null
           avatar_url: string | null
           created_at: string
           default_trip_id: string | null
-          email: string
+          email: string | null
           full_name: string
+          guest_trip_id: string | null
           id: string
           preferred_currency: string
           updated_at: string
@@ -964,6 +1007,7 @@ export type Database = {
           invited_by_avatar_url: string
           invited_by_name: string
           invited_name: string
+          person_name: string
           start_date: string
           status: string
           trip_id: string
@@ -988,6 +1032,11 @@ export type Database = {
         }[]
       }
       post_due_recurring: { Args: { p_trip_id?: string }; Returns: number }
+      remove_trip_person: { Args: { p_person_id: string }; Returns: undefined }
+      rename_trip_person: {
+        Args: { p_name: string; p_person_id: string }
+        Returns: undefined
+      }
       renew_invitation: {
         Args: { p_invitation_id: string }
         Returns: {
@@ -997,6 +1046,7 @@ export type Database = {
           invited_by: string
           invited_email: string
           invited_name: string | null
+          person_id: string | null
           status: Database["tripsplit"]["Enums"]["invitation_status"]
           token: string
           trip_id: string

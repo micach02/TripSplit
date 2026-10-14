@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/cn'
 import { DEFAULT_CURRENCY } from '@/lib/currencies'
 import { paths, tripPath } from '@/routes/paths'
+import { addPeople } from '@/services/memberService'
 import { createTrip, type TripInput } from '@/services/tripService'
 import { resizeImage } from '@/utils/image'
 import type { TripKind } from '@/utils/tripKind'
@@ -39,12 +40,17 @@ export default function CreateTripPage() {
   async function handleSubmit(input: TripInput, cover: CoverChange) {
     const coverImage = cover.kind === 'replace' ? await resizeImage(cover.file, 1600, 0.82) : null
     const trip = await createTrip(input, initialTripStatus(input.startDate), coverImage)
-    if (trip.kind === 'budget') {
-      // Budgets are often just for you: go straight to it rather than to inviting people.
+    const people = input.people ?? []
+    const failed = people.length > 0 ? await addPeople(trip.id, people) : []
+    if (failed.length > 0) {
+      toast.error(`${trip.name} is ready, but ${failed.join(', ')} couldn’t be added. Try again on the People tab.`)
+      navigate(tripPath(trip.id, 'people'), { replace: true })
+    } else if (trip.kind === 'budget' || people.length > 0) {
+      // Budgets are often just for you, and a trip with its people is ready to use.
       toast.success(`${trip.name} is ready — add your first expense.`)
       navigate(tripPath(trip.id), { replace: true })
     } else {
-      toast.success(`${trip.name} is ready — now invite your travel buddies!`)
+      toast.success(`${trip.name} is ready — now add who’s coming.`)
       navigate(tripPath(trip.id, 'people'), { replace: true })
     }
   }
