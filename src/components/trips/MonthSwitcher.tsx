@@ -42,7 +42,7 @@ export function MonthSwitcher({ period, range, onChange, className }: MonthSwitc
         <button
           type="button"
           onClick={() => onChange(range.latest)}
-          className="tap-target ml-1 rounded-md text-sm font-semibold text-blue-600 hover:text-blue-700"
+          className="tap-target ml-1 rounded-md text-sm font-semibold text-primary-600 hover:text-primary-700"
         >
           This month
         </button>

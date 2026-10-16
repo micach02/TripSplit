@@ -90,7 +90,7 @@ function ChangeCurrencyForm({ trip, budgetMinor, expenseCount, onClose, onChange
               setRate(event.target.value)
               setRateNote('Using your rate.')
             }}
-            className="h-11 w-36 rounded-lg border border-slate-300 bg-surface px-3 text-base font-semibold tabular-nums focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-none sm:text-sm"
+            className="h-11 w-36 rounded-lg border border-slate-300 bg-surface px-3 text-base font-semibold tabular-nums focus:border-primary-500 focus:ring-4 focus:ring-primary-500/15 focus:outline-none sm:text-sm"
             aria-label={`${target} per ${trip.currency}`}
           />
           <span>{target}</span>

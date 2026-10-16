@@ -63,7 +63,7 @@ export function AvatarUploader() {
       <div className="relative">
         <Avatar name={displayName} src={avatarUrl} size="xl" decorative />
         {busy && (
-          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-surface/70 text-blue-600">
+          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-surface/70 text-primary-600">
             <Spinner className="size-7" />
           </span>
         )}

@@ -102,6 +102,7 @@ export default function TripsPage() {
           <Card>
             <EmptyState
               icon={Luggage}
+              emoji="🗺️"
               title="Nothing here yet."
               description="Start a monthly budget for groceries and bills, or plan your next adventure."
               action={
@@ -129,12 +130,12 @@ export default function TripsPage() {
                   className={cn(
                     'flex h-11 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors sm:h-10',
                     filter === value
-                      ? 'bg-slate-900 text-slate-50'
+                      ? 'bg-brand-600 text-white'
                       : 'bg-surface text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50',
                   )}
                 >
                   {label}
-                  <span className={cn('text-xs tabular-nums', filter === value ? 'text-slate-50/90' : 'text-slate-500')}>
+                  <span className={cn('text-xs tabular-nums', filter === value ? 'text-white/90' : 'text-slate-500')}>
                     {count(value)}
                   </span>
                 </button>

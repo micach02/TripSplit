@@ -20,7 +20,7 @@ interface SplitEditorProps {
 // No width here: each method sets its own (w-full inside a sized label, or a fixed w-14).
 const inputClasses =
   'h-11 rounded-lg border border-slate-300 bg-surface px-3 text-right text-base font-semibold tabular-nums ' +
-  'focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-none sm:text-sm'
+  'focus:border-primary-500 focus:ring-4 focus:ring-primary-500/15 focus:outline-none sm:text-sm'
 
 function stepShares(value: string, delta: number): string {
   const current = Number.parseFloat(value)

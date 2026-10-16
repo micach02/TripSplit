@@ -7,38 +7,39 @@ const tabs: Array<{ section?: TripSection; label: string; settleUp?: boolean }> 
   { section: 'expenses', label: 'Expenses' },
   { section: 'people', label: 'People' },
   { section: 'balances', label: 'Balances', settleUp: true },
-  { section: 'settlements', label: 'Settlements', settleUp: true },
   { section: 'analytics', label: 'Analytics' },
-  { section: 'settings', label: 'Settings' },
 ]
 
 interface TripTabsProps {
   tripId: string
   label: string
-  /** Balances and Settlements only matter with two or more people. */
+  /** Balances (with the payments recorded) only matter with two or more people. */
   showSettleUp: boolean
   /** Query string to keep across tabs, e.g. "?month=2026-09" */
   search?: string
 }
 
-/** Horizontally scrollable on phones. */
+/**
+ * Five tabs at most, so they fit a phone; Settings is the gear in the trip
+ * header, and payments live on Balances. Still scrolls on the narrowest screens.
+ */
 export function TripTabs({ tripId, label, showSettleUp, search = '' }: TripTabsProps) {
   return (
     <nav aria-label={label} className="-mx-4 mt-5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
-      <ul className="flex min-w-max gap-1 border-b border-slate-200">
+      <ul className="flex min-w-max gap-1 max-sm:min-w-full max-sm:gap-0.5">
         {tabs
           .filter((tab) => showSettleUp || !tab.settleUp)
           .map(({ section, label: tabLabel }) => (
-            <li key={tabLabel}>
+            <li key={tabLabel} className="max-sm:flex-1">
               <NavLink
                 to={`${tripPath(tripId, section)}${search}`}
                 end={!section}
                 className={({ isActive }) =>
                   cn(
-                    '-mb-px flex h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors',
+                    'flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold whitespace-nowrap transition-colors max-sm:px-1 max-[380px]:text-[13px]',
                     isActive
-                      ? 'border-blue-600 text-blue-700'
-                      : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800',
+                      ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800',
                   )
                 }
               >

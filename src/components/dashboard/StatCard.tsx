@@ -6,7 +6,7 @@ import { cn } from '@/lib/cn'
 type StatTone = 'primary' | 'neutral' | 'positive' | 'negative'
 
 const tones: Record<StatTone, { icon: string; value: string }> = {
-  primary: { icon: 'bg-blue-50 text-blue-600', value: 'text-slate-900' },
+  primary: { icon: 'bg-primary-50 text-primary-600', value: 'text-slate-900' },
   neutral: { icon: 'bg-slate-100 text-slate-600', value: 'text-slate-900' },
   positive: { icon: 'bg-emerald-50 text-emerald-600', value: 'text-emerald-700' },
   negative: { icon: 'bg-red-50 text-red-600', value: 'text-red-700' },
@@ -25,7 +25,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'neutral', hint }: S
   return (
     <Card className="p-4 sm:p-5">
       <div className="flex items-center gap-3">
-        <span className={cn('flex size-9 shrink-0 items-center justify-center rounded-xl', styles.icon)}>
+        <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-full', styles.icon)}>
           <Icon className="size-5" aria-hidden />
         </span>
         <p className="text-sm font-semibold text-slate-500">{label}</p>

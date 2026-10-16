@@ -153,7 +153,7 @@ function InstallSettings() {
   }
 
   return (
-    <Card>
+    <Card id="install" className="scroll-mt-24">
       <CardHeader
         title="Install app"
         description="Open TripSplit from your home screen like any other app. Expenses you add without a connection are saved and sync later."

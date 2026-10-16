@@ -74,13 +74,13 @@ export default function CreateTripPage() {
                 onClick={() => setSearchParams(choice.kind === 'budget' ? { kind: 'budget' } : {}, { replace: true })}
                 className={cn(
                   'flex items-start gap-3 rounded-2xl bg-surface p-4 text-left shadow-sm ring-1 transition',
-                  selected ? 'ring-2 ring-blue-600' : 'ring-slate-900/5 hover:ring-slate-300',
+                  selected ? 'ring-2 ring-primary-600' : 'ring-slate-900/5 hover:ring-slate-300',
                 )}
               >
                 <span
                   className={cn(
                     'flex size-10 shrink-0 items-center justify-center rounded-xl',
-                    selected ? 'bg-brand-600 text-white' : 'bg-blue-50 text-blue-600',
+                    selected ? 'bg-brand-600 text-white' : 'bg-primary-50 text-primary-600',
                   )}
                 >
                   <Icon className="size-5" aria-hidden />
@@ -99,7 +99,11 @@ export default function CreateTripPage() {
             <TripForm
               // A fresh form when switching between budget and trip
               key={kind}
-              initial={emptyTripFormValues(profile?.preferred_currency ?? DEFAULT_CURRENCY, kind)}
+              initial={{
+                ...emptyTripFormValues(profile?.preferred_currency ?? DEFAULT_CURRENCY, kind),
+                // From the welcome screen: "Groceries & food", "Household bills"…
+                name: searchParams.get('name')?.slice(0, 100) ?? '',
+              }}
               submitLabel={kind === 'budget' ? 'Create budget' : 'Create trip'}
               onSubmit={handleSubmit}
               onCancel={() => navigate(paths.trips)}

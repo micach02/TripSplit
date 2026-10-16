@@ -98,6 +98,7 @@ export default function NotificationsPage() {
             <Card>
               <EmptyState
                 icon={BellRing}
+                emoji="🎉"
                 title="You're all caught up"
                 description="Invitations, and alerts when a budget is nearly used up, will show up here."
               />

@@ -67,6 +67,7 @@ export default function TripLayout() {
         <EmptyState
           headingLevel={1}
           icon={MapPinOff}
+          emoji="🏝️"
           title="We couldn’t find that"
           description="This trip or budget may have been deleted, or you’re not a member of it."
           action={<ButtonLink to={paths.trips}>Back to Budgets & Trips</ButtonLink>}

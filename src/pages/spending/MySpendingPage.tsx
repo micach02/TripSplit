@@ -220,10 +220,11 @@ export default function MySpendingPage() {
               <Card>
                 <EmptyState
                   icon={Wallet}
+                  emoji="🐷"
                   title={`Nothing spent in ${period.label}`}
                   description="Expenses you add to any budget or trip — or share with others — show up here."
                   action={
-                    <Link to={newBudgetPath} className="font-semibold text-blue-600 hover:text-blue-700">
+                    <Link to={newBudgetPath} className="font-semibold text-primary-600 hover:text-primary-700">
                       Start a monthly budget
                     </Link>
                   }
@@ -346,7 +347,7 @@ export default function MySpendingPage() {
                   title={selectedDay ? formatDate(selectedDay) : `Your expenses in ${period.name}`}
                   action={
                     selectedDay && (
-                      <button type="button" onClick={() => setSelectedDay(null)} className="tap-target text-sm font-semibold text-blue-600">
+                      <button type="button" onClick={() => setSelectedDay(null)} className="tap-target text-sm font-semibold text-primary-600">
                         Show all
                       </button>
                     )

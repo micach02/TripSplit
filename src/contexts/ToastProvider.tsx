@@ -15,7 +15,7 @@ const MAX_VISIBLE = 3
 const toneStyles: Record<ToastTone, { icon: typeof Info; className: string }> = {
   success: { icon: CircleCheck, className: 'text-emerald-600' },
   error: { icon: CircleAlert, className: 'text-red-600' },
-  info: { icon: Info, className: 'text-blue-600' },
+  info: { icon: Info, className: 'text-primary-600' },
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {

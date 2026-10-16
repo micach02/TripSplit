@@ -24,7 +24,7 @@ export function Sidebar() {
       </div>
 
       <div className="px-4 pt-2">
-        <ButtonLink to={paths.addExpense} fullWidth icon={<Plus className="size-5" aria-hidden />}>
+        <ButtonLink to={paths.addExpense} variant="accent" fullWidth icon={<Plus className="size-5" aria-hidden />}>
           Add expense
         </ButtonLink>
       </div>
@@ -38,8 +38,8 @@ export function Sidebar() {
                 end={end}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
-                    isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+                    'flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-bold transition-colors',
+                    isActive ? 'bg-primary-50 text-primary-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
                   )
                 }
               >

@@ -8,7 +8,7 @@ export function Spinner({ className }: { className?: string }) {
 /** Centered spinner for page content while a lazy route or data loads. */
 export function PageLoader({ label = 'Loading…' }: { label?: string }) {
   return (
-    <div className="flex min-h-[40vh] items-center justify-center text-blue-600" role="status">
+    <div className="flex min-h-[40vh] items-center justify-center text-primary-600" role="status">
       <Spinner className="size-7" />
       <span className="sr-only">{label}</span>
     </div>

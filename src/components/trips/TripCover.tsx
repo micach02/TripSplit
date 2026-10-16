@@ -1,34 +1,20 @@
-import { Plane } from 'lucide-react'
 import { cn } from '@/lib/cn'
-
-// Static class names so Tailwind can see them.
-const gradients = [
-  'from-sky-400 to-blue-600',
-  'from-emerald-400 to-teal-600',
-  'from-orange-400 to-rose-500',
-  'from-violet-400 to-indigo-600',
-  'from-amber-300 to-orange-500',
-  'from-pink-400 to-fuchsia-600',
-  'from-cyan-400 to-sky-600',
-]
-
-function gradientFor(seed: string): string {
-  let hash = 0
-  for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) | 0
-  return gradients[Math.abs(hash) % gradients.length]
-}
+import { coverEmoji, coverGradient } from '@/utils/coverStyle'
+import type { TripKind } from '@/utils/tripKind'
 
 interface TripCoverProps {
   tripId: string
   name: string
   url: string | null
   className?: string
-  /** Large covers get a bigger watermark icon. */
+  /** Large covers get a bigger emoji. */
   size?: 'card' | 'banner'
+  /** Picks the emoji shown without a photo */
+  kind?: TripKind
 }
 
-/** The trip's photo, or a colourful gradient picked from its id. */
-export function TripCover({ tripId, name, url, className, size = 'card' }: TripCoverProps) {
+/** The trip's photo, or its own colourful gradient with a playful emoji. */
+export function TripCover({ tripId, name, url, className, size = 'card', kind = 'trip' }: TripCoverProps) {
   return (
     <div className={cn('relative overflow-hidden bg-slate-200', className)}>
       {url ? (
@@ -43,10 +29,15 @@ export function TripCover({ tripId, name, url, className, size = 'card' }: TripC
         />
       ) : (
         <div
-          className={cn('flex size-full items-center justify-center bg-linear-to-br text-white', gradientFor(tripId))}
+          className={cn(
+            'flex size-full bg-linear-to-br',
+            // Banners carry the title at the bottom-left, so the emoji keeps to the top-right corner.
+            size === 'banner' ? 'items-start justify-end p-4 sm:p-6' : 'items-center justify-center',
+            coverGradient(tripId),
+          )}
           aria-hidden
         >
-          <Plane className={cn('-rotate-12 opacity-30', size === 'banner' ? 'size-24' : 'size-12')} strokeWidth={1.5} />
+          <span className={cn('-rotate-6 drop-shadow-md', size === 'banner' ? 'text-6xl sm:text-7xl' : 'text-5xl')}>{coverEmoji(kind)}</span>
         </div>
       )}
       <span className="sr-only">{`Cover for ${name}`}</span>

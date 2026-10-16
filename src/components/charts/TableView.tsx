@@ -12,7 +12,7 @@ interface TableViewProps {
 export function TableView({ caption, columns, rows, label = 'View as table' }: TableViewProps) {
   return (
     <details className="group mt-3">
-      <summary className="tap-target w-fit cursor-pointer rounded text-xs font-semibold text-blue-600 hover:text-blue-700">
+      <summary className="tap-target w-fit cursor-pointer rounded text-xs font-semibold text-primary-600 hover:text-primary-700">
         {label}
       </summary>
       {/* mt-4 clears the summary's enlarged hit area */}

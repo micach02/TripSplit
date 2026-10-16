@@ -21,7 +21,7 @@ export function RecentSettlements() {
         {error && !data ? (
           <p className="px-5 pb-5 text-sm text-slate-500 sm:px-6">Recent settlements couldn’t be loaded.</p>
         ) : !data ? (
-          <div className="flex justify-center py-8 text-blue-600">
+          <div className="flex justify-center py-8 text-primary-600">
             <Spinner />
           </div>
         ) : data.length === 0 ? (
@@ -34,7 +34,7 @@ export function RecentSettlements() {
             {data.map((settlement) => (
               <li key={settlement.id}>
                 <Link
-                  to={tripPath(settlement.tripId, 'settlements')}
+                  to={`${tripPath(settlement.tripId, 'balances')}#payments`}
                   className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50 sm:px-6"
                 >
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">

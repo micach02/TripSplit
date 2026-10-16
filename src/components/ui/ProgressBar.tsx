@@ -5,7 +5,7 @@ export type ProgressTone = 'neutral' | 'positive' | 'warning' | 'danger'
 // Meter: the fill carries the state; the track is a lighter step of the same hue,
 // so the state reads across the whole bar.
 const toneClasses: Record<ProgressTone, { fill: string; track: string }> = {
-  neutral: { fill: 'bg-blue-600', track: 'bg-blue-100' },
+  neutral: { fill: 'bg-primary-600', track: 'bg-primary-100' },
   positive: { fill: 'bg-emerald-500', track: 'bg-emerald-100' },
   warning: { fill: 'bg-orange-500', track: 'bg-orange-100' },
   danger: { fill: 'bg-red-500', track: 'bg-red-100' },

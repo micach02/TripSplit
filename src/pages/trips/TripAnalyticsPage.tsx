@@ -117,6 +117,7 @@ export default function TripAnalyticsPage() {
         <Card>
           <EmptyState
             icon={ChartPie}
+            emoji="📊"
             title={period ? `No spending in ${period.label}` : 'No spending to analyze yet'}
             description={period ? 'Pick another month above, or add expenses for this one.' : 'Charts appear here once expenses are added.'}
           />
@@ -187,7 +188,7 @@ export default function TripAnalyticsPage() {
               {isOwner ? (
                 <>
                   {isBudget ? 'Set monthly limits for groceries, dining out and more in' : 'Plan how much to spend on food, hotels and activities in'}{' '}
-                  <Link to={tripPath(trip.id, 'settings')} className="font-semibold text-blue-600 hover:text-blue-700">
+                  <Link to={tripPath(trip.id, 'settings')} className="font-semibold text-primary-600 hover:text-primary-700">
                     Settings → Category budgets
                   </Link>{' '}
                   to compare plan vs actual here.

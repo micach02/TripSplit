@@ -96,7 +96,7 @@ export function MemberList({
                   <button
                     type="button"
                     onClick={() => onInvite(member)}
-                    className={`${iconButton} hover:bg-blue-50 hover:text-blue-700`}
+                    className={`${iconButton} hover:bg-primary-50 hover:text-primary-700`}
                     aria-label={`Invite ${member.profile.full_name} to the app`}
                     title="Invite to the app (optional)"
                   >

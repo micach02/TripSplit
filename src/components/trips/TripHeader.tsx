@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { CalendarDays, ChevronLeft, MapPin, Plus, TrendingUp, Users, Wallet } from 'lucide-react'
+import { CalendarDays, ChevronLeft, MapPin, Plus, Settings, TrendingUp, Users, Wallet } from 'lucide-react'
 import { BudgetSummary } from '@/components/trips/BudgetSummary'
 import { ConversionNote, DisplayCurrencyPicker } from '@/components/trips/DisplayCurrencyPicker'
 import { MonthSwitcher } from '@/components/trips/MonthSwitcher'
@@ -7,7 +7,7 @@ import { TripCover } from '@/components/trips/TripCover'
 import { TripStatusBadge } from '@/components/trips/TripStatusBadge'
 import { ButtonLink } from '@/components/ui/Button'
 import type { TripContextValue } from '@/hooks/useTripContext'
-import { newExpensePath, paths } from '@/routes/paths'
+import { newExpensePath, paths, tripPath } from '@/routes/paths'
 import { cn } from '@/lib/cn'
 import { forecastMonthEnd } from '@/utils/calculations/insights'
 import { formatDate } from '@/utils/format'
@@ -31,23 +31,34 @@ export function TripHeader({ context }: { context: TripContextValue }) {
     setMonth,
     availableMinor,
     carryMinor,
+    copy,
   } = context
   const forecast = period ? forecastMonthEnd(periodSpentMinor, period, todayIso()) : null
   const forecastOver = forecast && availableMinor > 0 ? forecast.projectedMinor - availableMinor : 0
 
   return (
     <header>
-      <Link
-        to={paths.trips}
-        className="tap-target -ml-1 inline-flex items-center gap-1 rounded-lg px-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
-      >
-        <ChevronLeft className="size-4" aria-hidden />
-        Budgets & Trips
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          to={paths.trips}
+          className="tap-target -ml-1 inline-flex items-center gap-1 rounded-lg px-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
+        >
+          <ChevronLeft className="size-4" aria-hidden />
+          Budgets & Trips
+        </Link>
+        <Link
+          to={tripPath(trip.id, 'settings')}
+          className="tap-target inline-flex items-center gap-1.5 rounded-lg px-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
+          aria-label={`${copy.Noun} settings`}
+        >
+          <Settings className="size-4" aria-hidden />
+          <span className="max-sm:sr-only">Settings</span>
+        </Link>
+      </div>
 
       <div className="mt-2 overflow-hidden rounded-3xl bg-surface shadow-sm ring-1 ring-slate-900/5">
         <div className="relative">
-          <TripCover tripId={trip.id} name={trip.name} url={coverUrl} size="banner" className="h-40 sm:h-48" />
+          <TripCover tripId={trip.id} name={trip.name} url={coverUrl} kind={trip.kind} size="banner" className="h-44 sm:h-52" />
           <div aria-hidden className="absolute inset-0 bg-linear-to-t from-scrim/75 via-scrim/20 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-4 text-white sm:p-6">
             <div className="min-w-0">

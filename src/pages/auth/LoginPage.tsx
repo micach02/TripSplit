@@ -86,7 +86,7 @@ export default function LoginPage() {
           onChange={(event) => setPassword(event.target.value)}
           error={errors.password}
           labelAction={
-            <Link to={paths.forgotPassword} className="tap-target text-sm font-semibold text-blue-600 hover:text-blue-700">
+            <Link to={paths.forgotPassword} className="tap-target text-sm font-semibold text-primary-600 hover:text-primary-700">
               Forgot password?
             </Link>
           }
@@ -99,7 +99,7 @@ export default function LoginPage() {
 
       <p className="mt-8 text-center text-sm text-slate-500">
         New to TripSplit?{' '}
-        <Link to={paths.register} state={location.state} className="font-semibold text-blue-600 hover:text-blue-700">
+        <Link to={paths.register} state={location.state} className="font-semibold text-primary-600 hover:text-primary-700">
           Create an account
         </Link>
       </p>

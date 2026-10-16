@@ -28,6 +28,10 @@ export interface DashboardSummary {
   /** Currency the totals are expressed in (the user's preferred currency). */
   currency: string
   tripCount: number
+  /** Expenses across every budget and trip (for "Getting started") */
+  expenseCount: number
+  /** Whether anyone else is on any of my budgets or trips */
+  sharesWithOthers: boolean
   activeTrips: DashboardTrip[]
   /** Totals across active trips and this month of every budget, converted into `currency` (minor units). */
   totals: { budget: number; spent: number; remaining: number }
@@ -56,19 +60,22 @@ export async function getDashboardSummaryOfflineFirst(currency: string, userId: 
 }
 
 export async function getDashboardSummary(currency: string, userId: string): Promise<DashboardSummary> {
-  const [tripsResult, totalsResult, monthResult, balancesResult] = await Promise.all([
+  const [tripsResult, totalsResult, monthResult, balancesResult, membersResult] = await Promise.all([
     supabase
       .from('trips')
       .select('id, kind, name, destination, start_date, end_date, budget, currency, status')
       .order('start_date', { ascending: true }),
-    supabase.from('trip_totals').select('trip_id, total_spent'),
+    supabase.from('trip_totals').select('trip_id, total_spent, expense_count'),
     supabase.from('trip_month_totals').select('trip_id, total_spent').eq('month', `${currentMonth()}-01`),
     supabase.from('trip_member_balances').select('trip_id, net').eq('user_id', userId),
+    // Every membership I can see: more of them than trips means someone else is on one.
+    supabase.from('trip_members').select('trip_id', { count: 'exact', head: true }),
   ])
   if (tripsResult.error) throw tripsResult.error
   if (totalsResult.error) throw totalsResult.error
   if (monthResult.error) throw monthResult.error
   if (balancesResult.error) throw balancesResult.error
+  if (membersResult.error) throw membersResult.error
 
   const trips = tripsResult.data
   const spentByTrip = new Map(totalsResult.data.map((row) => [row.trip_id, row.total_spent ?? 0]))
@@ -137,6 +144,8 @@ export async function getDashboardSummary(currency: string, userId: string): Pro
   return {
     currency,
     tripCount: trips.length,
+    expenseCount: totalsResult.data.reduce((sum, row) => sum + (row.expense_count ?? 0), 0),
+    sharesWithOthers: (membersResult.count ?? 0) > trips.length,
     activeTrips,
     totals: { budget, spent, remaining: budget - spent },
     convertedTripCount,

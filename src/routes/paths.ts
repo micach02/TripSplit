@@ -27,9 +27,12 @@ export const paths = {
   notifications: '/notifications',
   profile: '/profile',
   settings: '/settings',
+  welcome: '/welcome',
+  privacy: '/privacy',
+  terms: '/terms',
 } as const
 
-export type TripSection = 'expenses' | 'people' | 'balances' | 'settlements' | 'analytics' | 'settings'
+export type TripSection = 'expenses' | 'people' | 'balances' | 'analytics' | 'settings'
 
 /** /trips/:tripId or one of its tabs. */
 export function tripPath(tripId: string, section?: TripSection): string {
@@ -49,4 +52,14 @@ export function editExpensePath(tripId: string, expenseId: string): string {
 
 export function invitePath(token: string): string {
   return `/invite/${token}`
+}
+
+/**
+ * The link people share. It opens the app's root (`/?invite=…`), which GitHub
+ * Pages serves with a 200 — chat apps only show a preview card for those, not
+ * for the 404 fallback that deep links like /invite/… get. The root forwards
+ * to invitePath.
+ */
+export function inviteShareUrl(token: string): string {
+  return absoluteUrl(`/?invite=${token}`)
 }

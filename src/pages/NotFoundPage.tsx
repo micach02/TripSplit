@@ -14,6 +14,7 @@ export default function NotFoundPage() {
       <Card className="w-full max-w-md">
         <EmptyState
           icon={Compass}
+          emoji="🧭"
           headingLevel={1}
           title="Looks like you took a wrong turn"
           description="We couldn't find that page. It may have moved, or the link might be wrong."

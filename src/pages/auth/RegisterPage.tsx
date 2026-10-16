@@ -83,7 +83,7 @@ export default function RegisterPage() {
               </>
             }
           />
-          <Link to={paths.login} state={location.state} className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+          <Link to={paths.login} state={location.state} className="text-sm font-semibold text-primary-600 hover:text-primary-700">
             Back to log in
           </Link>
         </div>
@@ -144,11 +144,22 @@ export default function RegisterPage() {
         <Button type="submit" size="lg" fullWidth loading={submitting}>
           Create account
         </Button>
+        <p className="text-center text-xs text-slate-500">
+          By creating an account, you agree to the{' '}
+          <Link to={paths.terms} className="font-semibold text-slate-700 underline underline-offset-2 hover:text-slate-900">
+            Terms
+          </Link>{' '}
+          and{' '}
+          <Link to={paths.privacy} className="font-semibold text-slate-700 underline underline-offset-2 hover:text-slate-900">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </form>
 
       <p className="mt-8 text-center text-sm text-slate-500">
         Already have an account?{' '}
-        <Link to={paths.login} state={location.state} className="font-semibold text-blue-600 hover:text-blue-700">
+        <Link to={paths.login} state={location.state} className="font-semibold text-primary-600 hover:text-primary-700">
           Log in
         </Link>
       </p>

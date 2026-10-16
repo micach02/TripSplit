@@ -48,6 +48,7 @@ export default function AddExpensePage() {
         <Card>
           <EmptyState
             icon={Luggage}
+            emoji="🧳"
             title="Nothing to add expenses to yet"
             description="Create a monthly budget or a trip first — then logging an expense takes seconds."
             action={
@@ -63,9 +64,9 @@ export default function AddExpensePage() {
             <li key={trip.id}>
               <Link
                 to={newExpensePath(trip.id)}
-                className="flex items-center gap-4 rounded-2xl bg-surface p-3 shadow-sm ring-1 ring-slate-900/5 transition hover:ring-blue-300"
+                className="flex items-center gap-4 rounded-2xl bg-surface p-3 shadow-sm ring-1 ring-slate-900/5 transition hover:ring-primary-300"
               >
-                <TripCover tripId={trip.id} name={trip.name} url={trip.coverUrl} className="size-16 shrink-0 rounded-xl" />
+                <TripCover tripId={trip.id} name={trip.name} url={trip.coverUrl} kind={trip.kind} size="card" className="size-16 shrink-0 rounded-2xl [&_span]:text-3xl" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-bold text-slate-900">{trip.name}</p>
                   <p className="truncate text-sm text-slate-500">
@@ -82,7 +83,7 @@ export default function AddExpensePage() {
       {open.length > 1 && !profile?.default_trip_id && (
         <p className="mt-6 text-sm text-slate-500">
           Tip: choose a default in{' '}
-          <Link to={`${paths.settings}#quick-add`} className="font-semibold text-blue-600 hover:text-blue-700">
+          <Link to={`${paths.settings}#quick-add`} className="font-semibold text-primary-600 hover:text-primary-700">
             Settings
           </Link>{' '}
           and the + button will open it straight away.

@@ -54,7 +54,7 @@ export function InvitationCard({ invitation, onAnswered }: InvitationCardProps) 
   }
 
   return (
-    <Card className="animate-rise-in border-l-4 border-blue-500 p-4 sm:p-5">
+    <Card className="animate-rise-in border-l-4 border-primary-500 p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <Avatar name={invitation.invitedByName} src={invitation.invitedByAvatarUrl} size="md" decorative />
         <div className="min-w-0 flex-1">

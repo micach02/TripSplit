@@ -11,7 +11,7 @@ export function controlClasses(invalid: boolean, className?: string): string {
     'disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500',
     invalid
       ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15'
-      : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500/15',
+      : 'border-slate-300 focus:border-primary-500 focus:ring-primary-500/15',
     className,
   )
 }

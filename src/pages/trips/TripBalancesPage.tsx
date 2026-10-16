@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router'
 import { PartyPopper, Scale } from 'lucide-react'
 import { SettlementDialog, type SettlementPrefill } from '@/components/balances/SettlementDialog'
+import { SettlementHistory } from '@/components/balances/SettlementHistory'
 import { TransferRow } from '@/components/balances/TransferRow'
 import { Alert } from '@/components/ui/Alert'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
-import { Card, CardBody, CardHeader } from '@/components/ui/Card'
+import { Card, CardHeader } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PageSkeleton } from '@/components/ui/Skeleton'
 import { memberName, useTripContext } from '@/hooks/useTripContext'
@@ -14,7 +15,6 @@ import { useTripLedger } from '@/hooks/useTripLedger'
 import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/cn'
 import { getErrorMessage } from '@/lib/errors'
-import { tripPath } from '@/routes/paths'
 import { calculateBalances, describeBalance } from '@/utils/calculations/balanceCalculator'
 import { simplifyDebts } from '@/utils/calculations/debtSimplifier'
 
@@ -25,6 +25,13 @@ export default function TripBalancesPage() {
   const ledger = useTripLedger(trip)
   const [prefill, setPrefill] = useState<SettlementPrefill | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const { hash } = useLocation()
+  const loaded = Boolean(ledger.data)
+
+  // Old Settlements links land on #payments once the list has loaded.
+  useEffect(() => {
+    if (loaded && hash) document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' })
+  }, [loaded, hash])
 
   const { balances, transfers } = useMemo(() => {
     if (!ledger.data) return { balances: [], transfers: [] }
@@ -51,11 +58,12 @@ export default function TripBalancesPage() {
   }
   if (!ledger.data) return <PageSkeleton heading={false} label="Calculating balances…" />
 
-  if (ledger.data.expenses.length === 0) {
+  if (ledger.data.expenses.length === 0 && ledger.data.settlements.length === 0) {
     return (
       <Card>
         <EmptyState
           icon={Scale}
+          emoji="🤝"
           title="Nothing to balance yet"
           description="Once expenses are added, you'll see who owes whom here."
         />
@@ -173,14 +181,9 @@ export default function TripBalancesPage() {
             )
           })}
         </ul>
-        <CardBody className="pt-3 text-xs text-slate-500">
-          See every payment on the{' '}
-          <Link to={tripPath(trip.id, 'settlements')} className="font-semibold text-blue-600 hover:text-blue-700">
-            Settlements
-          </Link>{' '}
-          tab.
-        </CardBody>
       </Card>
+
+      <SettlementHistory context={context} settlements={ledger.data.settlements} onChanged={ledger.reload} />
 
       <SettlementDialog
         open={dialogOpen}

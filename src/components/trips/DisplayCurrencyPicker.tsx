@@ -22,7 +22,7 @@ export function CurrencyViewPicker({ value, onChange, homeCurrency, homeLabel, l
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-8 rounded-full border-0 bg-surface px-2 text-xs font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        className="h-8 rounded-full border-0 bg-surface px-2 text-xs font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
         aria-label="Currency to view amounts in"
       >
         {CURRENCY_CODES.map((code) => (
@@ -31,7 +31,7 @@ export function CurrencyViewPicker({ value, onChange, homeCurrency, homeLabel, l
           </option>
         ))}
       </select>
-      {loading && <Spinner className="size-3.5 text-blue-600" />}
+      {loading && <Spinner className="size-3.5 text-primary-600" />}
     </label>
   )
 }

@@ -22,7 +22,7 @@ export function RecentExpenses() {
         {error && !data ? (
           <p className="px-5 pb-5 text-sm text-slate-500 sm:px-6">Recent expenses couldn’t be loaded.</p>
         ) : !data ? (
-          <div className="flex justify-center py-8 text-blue-600">
+          <div className="flex justify-center py-8 text-primary-600">
             <Spinner />
           </div>
         ) : data.length === 0 ? (

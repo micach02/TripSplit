@@ -488,7 +488,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                 <button
                   type="button"
                   onClick={onChangeTrip}
-                  className="tap-target shrink-0 rounded font-semibold text-blue-600 hover:text-blue-700"
+                  className="tap-target shrink-0 rounded font-semibold text-primary-600 hover:text-primary-700"
                 >
                   Change
                 </button>
@@ -525,7 +525,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                     'h-16 w-full rounded-2xl border bg-surface pr-4 pl-14 text-3xl font-extrabold text-slate-900 tabular-nums placeholder:text-slate-300 focus:ring-4 focus:outline-none',
                     errors.amount
                       ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15'
-                      : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500/15',
+                      : 'border-slate-300 focus:border-primary-500 focus:ring-primary-500/15',
                   )}
                 />
               </div>
@@ -533,7 +533,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                 aria-label="Currency"
                 value={state.currency}
                 onChange={(event) => changeCurrency(event.target.value)}
-                className="h-16 shrink-0 rounded-2xl border border-slate-300 bg-surface px-3 text-base font-bold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-none"
+                className="h-16 shrink-0 rounded-2xl border border-slate-300 bg-surface px-3 text-base font-bold text-slate-700 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/15 focus:outline-none"
               >
                 {CURRENCY_CODES.map((code) => (
                   <option key={code} value={code}>
@@ -560,7 +560,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                     placeholder={rateLookup.status === 'loading' ? '…' : '0.00'}
                     aria-label={`Exchange rate: ${tripCurrency} per ${state.currency}`}
                     aria-invalid={errors.rate ? true : undefined}
-                    className="h-11 w-32 rounded-lg border border-slate-300 bg-surface px-3 text-base font-semibold tabular-nums focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-none sm:text-sm"
+                    className="h-11 w-32 rounded-lg border border-slate-300 bg-surface px-3 text-base font-semibold tabular-nums focus:border-primary-500 focus:ring-4 focus:ring-primary-500/15 focus:outline-none sm:text-sm"
                   />
                   <span>{tripCurrency}</span>
                 </label>
@@ -586,7 +586,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                     <button
                       type="button"
                       onClick={() => void lookUpRate(state.currency, state.expenseDate, true)}
-                      className="rounded font-semibold text-blue-600 hover:text-blue-700"
+                      className="rounded font-semibold text-primary-600 hover:text-primary-700"
                     >
                       Use official rate
                     </button>
@@ -672,7 +672,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                     className={cn(
                       'flex min-h-11 items-center gap-1 rounded-full px-3.5 text-sm font-semibold ring-1 transition-colors sm:min-h-9',
                       selected
-                        ? 'bg-brand-600 text-white ring-blue-600'
+                        ? 'bg-brand-600 text-white ring-primary-600'
                         : 'bg-surface text-slate-700 ring-slate-300 hover:bg-slate-50',
                     )}
                   >
@@ -707,7 +707,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                   <button
                     type="button"
                     onClick={() => setParticipants(allSelected ? [] : members.map((m) => m.userId))}
-                    className="tap-target rounded-md px-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                    className="tap-target rounded-md px-1 text-sm font-semibold text-primary-600 hover:text-primary-700"
                   >
                     {allSelected ? 'Clear' : 'Select all'}
                   </button>
@@ -764,7 +764,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                   className={cn(
                     'min-h-11 rounded-full px-3.5 text-sm font-semibold ring-1 transition-colors sm:min-h-9',
                     state.expenseDate === choice.date
-                      ? 'bg-slate-900 text-slate-50 ring-slate-900'
+                      ? 'bg-brand-600 text-white ring-brand-600'
                       : 'bg-surface text-slate-700 ring-slate-300 hover:bg-slate-50',
                   )}
                 >
@@ -805,7 +805,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                 </p>
               )}
               {scan.status === 'done' && (
-                <div className="rounded-2xl bg-blue-50 p-3 ring-1 ring-blue-100">
+                <div className="rounded-2xl bg-primary-50 p-3 ring-1 ring-primary-100">
                   <p className="text-sm font-semibold text-slate-900">Found on the receipt</p>
                   <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-sm">
                     {scan.guess.amount && (
@@ -855,7 +855,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
             <button
               type="button"
               onClick={() => setShowNotes(true)}
-              className="tap-target rounded-md text-sm font-semibold text-blue-600 hover:text-blue-700"
+              className="tap-target rounded-md text-sm font-semibold text-primary-600 hover:text-primary-700"
             >
               + Add notes
             </button>

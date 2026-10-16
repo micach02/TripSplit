@@ -1,60 +1,17 @@
 import { Suspense } from 'react'
 import { Link, Outlet } from 'react-router'
+import { LegalLinks } from '@/components/layout/SiteFooter'
+import { ExpensePreview } from '@/components/marketing/ProductPreview'
 import { Logo } from '@/components/ui/Logo'
 import { PageLoader } from '@/components/ui/Spinner'
 import { paths } from '@/routes/paths'
-import { formatMoney } from '@/utils/calculations/money'
-
-/** A tiny, decorative preview of what TripSplit does. */
-function ExpensePreview() {
-  const travelers = [
-    { initials: 'MR', className: 'bg-blue-100 text-blue-700' },
-    { initials: 'JC', className: 'bg-emerald-100 text-emerald-700' },
-    { initials: 'SL', className: 'bg-violet-100 text-violet-700' },
-    { initials: 'AT', className: 'bg-amber-100 text-amber-800' },
-  ]
-  return (
-    <div aria-hidden className="mt-10 max-w-sm rounded-2xl bg-surface p-5 text-slate-900 shadow-2xl shadow-blue-950/25">
-      <div className="flex items-center gap-3">
-        <span className="flex size-11 items-center justify-center rounded-xl bg-orange-50 text-xl">🍜</span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-bold">Dinner at Lau Pa Sat</p>
-          <p className="text-sm text-slate-500">Paid by Michael · Split 4 ways</p>
-        </div>
-        <p className="font-bold">{formatMoney(250000, 'PHP')}</p>
-      </div>
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
-        <div className="flex -space-x-1.5">
-          {travelers.map((traveler) => (
-            <span
-              key={traveler.initials}
-              className={`flex size-9 items-center justify-center rounded-full text-xs font-bold ring-2 ring-surface ${traveler.className}`}
-            >
-              {traveler.initials}
-            </span>
-          ))}
-        </div>
-        <p className="text-sm font-semibold text-emerald-700">{formatMoney(62500, 'PHP')} each</p>
-      </div>
-      <div className="mt-4">
-        <div className="flex justify-between text-xs font-semibold text-slate-500">
-          <span>Trip budget</span>
-          <span>64.9% spent</span>
-        </div>
-        <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full w-[64.9%] rounded-full bg-blue-600" />
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export function AuthLayout() {
   return (
     <div className="flex min-h-dvh bg-surface">
-      <aside className="relative hidden w-[44%] max-w-2xl flex-col justify-between overflow-hidden bg-linear-to-br from-brand-700 via-brand-600 to-sky-500 p-10 text-white lg:flex xl:p-14">
-        <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 size-96 rounded-full bg-white/10" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-32 -left-20 size-80 rounded-full bg-sky-300/20" />
+      <aside className="relative hidden w-[44%] max-w-2xl flex-col justify-between overflow-hidden bg-linear-to-br from-brand-800 via-brand-700 to-brand-600 p-10 text-white lg:flex xl:p-14">
+        <div aria-hidden className="pointer-events-none absolute -top-20 -right-20 size-64 rounded-full bg-sunset-400" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-32 -left-20 size-80 rounded-full bg-white/10" />
 
         <Link to={paths.home} className="relative w-fit rounded-lg" aria-label="TripSplit home">
           <Logo inverted />
@@ -71,7 +28,7 @@ export function AuthLayout() {
           <p className="mt-5 max-w-sm text-lg text-white/90">
             Your group&apos;s travel budget, simplified. Log an expense in seconds — TripSplit works out who owes whom.
           </p>
-          <ExpensePreview />
+          <ExpensePreview className="mt-10 max-w-sm" />
         </div>
 
         <p className="relative text-sm text-white/75">© {new Date().getFullYear()} TripSplit</p>
@@ -88,6 +45,7 @@ export function AuthLayout() {
             <Suspense fallback={<PageLoader />}>
               <Outlet />
             </Suspense>
+            <LegalLinks className="mt-10 justify-center" />
           </div>
         </div>
       </main>

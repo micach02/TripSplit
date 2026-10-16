@@ -13,7 +13,7 @@ interface SpendingCalendarProps {
 
 // One hue, stepping away from the page as spending grows (sequential); empty days stay neutral.
 // The busiest steps knock their text out in the surface colour, so it reads in both modes.
-const LEVELS = ['bg-slate-100 text-slate-600', 'bg-blue-100 text-blue-900', 'bg-blue-300 text-blue-950', 'bg-blue-600 text-surface', 'bg-blue-800 text-surface']
+const LEVELS = ['bg-slate-100 text-slate-600', 'bg-primary-100 text-primary-900', 'bg-primary-300 text-primary-950', 'bg-primary-600 text-surface', 'bg-primary-800 text-surface']
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 /** Thresholds from the spending days themselves, so one big day doesn't wash out the rest. */
@@ -63,7 +63,7 @@ export function SpendingCalendar({ days, format: formatAmount, selected, onSelec
                 'flex aspect-square min-h-9 items-center justify-center rounded-lg text-xs font-semibold tabular-nums transition',
                 future ? 'bg-transparent text-slate-300' : LEVELS[level],
                 selected === day.date && 'ring-2 ring-slate-900 ring-offset-1',
-                day.date === today && selected !== day.date && 'ring-2 ring-blue-600',
+                day.date === today && selected !== day.date && 'ring-2 ring-primary-600',
               )}
             >
               {Number(day.date.slice(8, 10))}

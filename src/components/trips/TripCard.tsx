@@ -21,11 +21,11 @@ export function TripCard({ trip }: { trip: TripListItem }) {
       className="group flex flex-col overflow-hidden rounded-2xl bg-surface shadow-sm ring-1 ring-slate-900/5 transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2"
     >
       <div className="relative">
-        <TripCover tripId={trip.id} name={trip.name} url={trip.coverUrl} className="h-32 sm:h-36" />
+        <TripCover tripId={trip.id} name={trip.name} url={trip.coverUrl} kind={trip.kind} className="h-32 sm:h-36" />
         <TripStatusBadge status={trip.effectiveStatus} kind={trip.kind} className="absolute top-3 left-3 shadow-sm ring-white/60" />
       </div>
       <div className="flex flex-1 flex-col p-4">
-        <h2 className="truncate text-base font-bold text-slate-900 group-hover:text-blue-700">{trip.name}</h2>
+        <h2 className="truncate text-base font-bold text-slate-900 group-hover:text-primary-700">{trip.name}</h2>
         <div className="mt-1 space-y-0.5 text-sm text-slate-500">
           {trip.destination && (
             <p className="flex items-center gap-1.5 truncate">

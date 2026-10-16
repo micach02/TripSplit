@@ -1,16 +1,17 @@
 import { useCallback, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { CirclePlus, Luggage, PiggyBank, Plane, Wallet, WalletMinimal } from 'lucide-react'
+import { CirclePlus, Luggage } from 'lucide-react'
 import { RecentExpenses } from '@/components/dashboard/RecentExpenses'
 import { RecentSettlements } from '@/components/dashboard/RecentSettlements'
 import { YourBalances } from '@/components/dashboard/YourBalances'
-import { StatCard, StatCardSkeleton } from '@/components/dashboard/StatCard'
 import { PendingInvitationsBanner } from '@/components/members/PendingInvitationsBanner'
 import { CurrencyViewPicker } from '@/components/trips/DisplayCurrencyPicker'
 import { TripBudgetRow } from '@/components/trips/TripBudgetRow'
 import { Alert } from '@/components/ui/Alert'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
+import { DashboardHero } from '@/components/dashboard/DashboardHero'
+import { GettingStarted } from '@/components/dashboard/GettingStarted'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader, PageTitle } from '@/components/ui/PageHeader'
 import { useAsync } from '@/hooks/useAsync'
@@ -20,7 +21,6 @@ import { useDataChanged } from '@/lib/dataEvents'
 import { getErrorMessage } from '@/lib/errors'
 import { newBudgetPath, paths } from '@/routes/paths'
 import { getDashboardSummaryOfflineFirst, type DashboardSummary } from '@/services/dashboardService'
-import { formatMoney } from '@/utils/calculations/money'
 import { firstName } from '@/utils/format'
 
 const VIEW_CURRENCY_KEY = 'tripsplit:dashboard-currency'
@@ -53,8 +53,7 @@ function Overview({
   preferredCurrency: string
   picker: ReactNode
 }) {
-  const { currency, totals, activeTrips, convertedTripCount, unconvertedTripCount } = summary
-  const overBudget = totals.remaining < 0
+  const { currency, convertedTripCount, unconvertedTripCount } = summary
 
   return (
     <section aria-label="Overview">
@@ -62,22 +61,12 @@ function Overview({
         <h2 className="text-sm font-semibold text-slate-700">At a glance</h2>
         {picker}
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Active" value={activeTrips.length} icon={Plane} tone="primary" hint="budgets & trips" />
-        <StatCard label="Total Spent" value={formatMoney(totals.spent, currency)} icon={Wallet} />
-        <StatCard label="Total Budget" value={formatMoney(totals.budget, currency)} icon={PiggyBank} />
-        <StatCard
-          label={overBudget ? 'Over Budget' : 'Remaining'}
-          value={formatMoney(Math.abs(totals.remaining), currency)}
-          icon={WalletMinimal}
-          tone={overBudget ? 'negative' : 'positive'}
-        />
-      </div>
+      <DashboardHero summary={summary} />
       <p className="mt-3 text-xs text-slate-500">
         {currency === preferredCurrency ? (
           <>
             Totals in {currency} (your{' '}
-            <Link to={paths.settings} className="font-semibold text-blue-600 hover:text-blue-700">
+            <Link to={paths.settings} className="font-semibold text-primary-600 hover:text-primary-700">
               preferred currency
             </Link>
             ).
@@ -85,7 +74,7 @@ function Overview({
         ) : (
           <>
             Totals shown in {currency}; your{' '}
-            <Link to={paths.settings} className="font-semibold text-blue-600 hover:text-blue-700">
+            <Link to={paths.settings} className="font-semibold text-primary-600 hover:text-primary-700">
               preferred currency
             </Link>{' '}
             is {preferredCurrency}.
@@ -108,6 +97,10 @@ export default function DashboardPage() {
   const load = useCallback(() => getDashboardSummaryOfflineFirst(currency, user.id), [currency, user.id])
   const { data: summary, error, loading, reload } = useAsync(load)
   useDataChanged(reload)
+  // "Welcome" on the first day, "Welcome back" after that (worked out once, on arrival).
+  const [isNewAccount] = useState(() =>
+    profile ? Date.now() - Date.parse(profile.created_at) < 24 * 60 * 60 * 1000 : false,
+  )
 
   function changeViewCurrency(code: string) {
     const choice = code === preferredCurrency ? null : code
@@ -129,7 +122,7 @@ export default function DashboardPage() {
     <>
       <PageTitle title="Dashboard" />
       <PageHeader
-        title={`Welcome back, ${firstName(displayName) || 'traveler'} 👋`}
+        title={`${isNewAccount ? 'Welcome' : 'Welcome back'}, ${firstName(displayName) || 'traveler'} 👋`}
         description="Everyday budgets and trips, simplified."
         actions={
           <ButtonLink to={paths.newTrip} className="max-sm:hidden" icon={<CirclePlus className="size-5" aria-hidden />}>
@@ -149,24 +142,23 @@ export default function DashboardPage() {
             </Button>
           </Alert>
         ) : !summary ? (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4" aria-busy="true">
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
+          <div aria-busy="true">
+            <div className="h-64 animate-pulse rounded-3xl bg-slate-200 sm:h-72" aria-hidden />
             <span className="sr-only" role="status">
               Loading your dashboard…
             </span>
           </div>
         ) : (
           <>
+            <GettingStarted summary={summary} userId={user.id} />
             <Overview summary={summary} preferredCurrency={preferredCurrency} picker={picker} />
 
             {summary.tripCount === 0 ? (
               <Card>
                 <EmptyState
                   icon={Luggage}
-                  title="Nothing here yet."
+                  emoji="🧳"
+                  title="Where to first?"
                   description="Start a monthly budget for groceries, food and bills — or plan a trip with friends. TripSplit keeps score."
                   action={
                     <div className="flex flex-wrap justify-center gap-2">
@@ -189,7 +181,7 @@ export default function DashboardPage() {
                       summary.activeTrips.length > 0 ? 'Budgets show this month; trips show the whole trip.' : undefined
                     }
                     action={
-                      <Link to={paths.trips} className="tap-target shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                      <Link to={paths.trips} className="tap-target shrink-0 text-sm font-semibold text-primary-600 hover:text-primary-700">
                         See all
                       </Link>
                     }
@@ -204,7 +196,7 @@ export default function DashboardPage() {
                     ) : (
                       <p className="text-sm text-slate-500">
                         Nothing running right now.{' '}
-                        <Link to={paths.trips} className="font-semibold text-blue-600 hover:text-blue-700">
+                        <Link to={paths.trips} className="font-semibold text-primary-600 hover:text-primary-700">
                           See upcoming trips and archived budgets
                         </Link>
                         .

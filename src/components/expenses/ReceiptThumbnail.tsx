@@ -32,7 +32,7 @@ export function ReceiptThumbnail({ path, title }: { path: string; title: string 
         {url ? (
           <img src={url} alt={`Receipt for ${title}`} className="size-full object-cover object-top transition group-hover:scale-[1.02]" />
         ) : (
-          <span className="flex size-full items-center justify-center text-blue-600">
+          <span className="flex size-full items-center justify-center text-primary-600">
             <Spinner />
           </span>
         )}

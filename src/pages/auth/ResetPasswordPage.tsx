@@ -77,7 +77,7 @@ export default function ResetPasswordPage() {
           <ButtonLink to={paths.forgotPassword} size="lg" fullWidth>
             Request a new link
           </ButtonLink>
-          <Link to={paths.login} className="mt-6 inline-block text-sm font-semibold text-blue-600 hover:text-blue-700">
+          <Link to={paths.login} className="mt-6 inline-block text-sm font-semibold text-primary-600 hover:text-primary-700">
             Back to log in
           </Link>
         </div>

@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PageTitle } from '@/components/ui/PageHeader'
 import { PageLoader } from '@/components/ui/Spinner'
 import { useAsync } from '@/hooks/useAsync'
+import { useAuth } from '@/hooks/useAuth'
 import { useInvitations } from '@/hooks/useInvitations'
 import { useToast } from '@/hooks/useToast'
 import { getErrorMessage } from '@/lib/errors'
@@ -42,6 +43,7 @@ export default function InvitePage() {
   const [declined, setDeclined] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const invitations = useInvitations()
+  const { profile, updateProfile } = useAuth()
 
   // They made it here, so the remembered invite has done its job.
   useEffect(() => {
@@ -123,6 +125,10 @@ export default function InvitePage() {
     setActionError(null)
     try {
       const tripId = await acceptInvitationLink(token)
+      // Joining a trip is a fine first step: skip the welcome screens.
+      if (profile && profile.onboarded_at === null) {
+        await updateProfile({ onboarded_at: new Date().toISOString() }).catch(() => undefined)
+      }
       toast.success(`You joined ${preview?.tripName ?? 'the trip'}! 🎉`)
       invitations.refresh()
       navigate(tripPath(tripId), { replace: true })
@@ -149,13 +155,14 @@ export default function InvitePage() {
   return (
     <Centered title={`Join ${preview.tripName}`}>
       <Card className="animate-rise-in overflow-hidden">
-        <div className="bg-linear-to-br from-brand-600 to-sky-500 px-5 pt-6 pb-8 text-white sm:px-6">
-          <span className="flex size-11 items-center justify-center rounded-2xl bg-white/15">
+        <div className="relative overflow-hidden bg-linear-to-br from-brand-800 via-brand-700 to-brand-600 px-5 pt-6 pb-8 text-white sm:px-6">
+          <div aria-hidden className="pointer-events-none absolute -top-8 -right-8 size-24 rounded-full bg-sunset-400" />
+          <span className="relative flex size-11 items-center justify-center rounded-full bg-white/15">
             <PlaneTakeoff className="size-6" aria-hidden />
           </span>
-          <p className="mt-4 text-sm font-medium text-white/90">You’re invited to join</p>
-          <h1 className="mt-0.5 text-2xl font-extrabold wrap-break-word">{preview.tripName}</h1>
-          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/90">
+          <p className="relative mt-4 text-sm font-medium text-white/90">You’re invited to join</p>
+          <h1 className="relative mt-0.5 text-2xl font-extrabold wrap-break-word">{preview.tripName}</h1>
+          <p className="relative mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/90">
             <span className="inline-flex items-center gap-1.5">
               <CalendarDays className="size-4" aria-hidden />
               {timeframe({ kind: preview.tripKind, startDate: preview.startDate, endDate: preview.endDate })}
@@ -180,7 +187,7 @@ export default function InvitePage() {
           </div>
 
           {preview.personName ? (
-            <p className="rounded-2xl bg-blue-50 p-3 text-sm text-slate-700 ring-1 ring-blue-100">
+            <p className="rounded-2xl bg-primary-50 p-3 text-sm text-slate-700 ring-1 ring-primary-100">
               You’ll take <span className="font-semibold text-slate-900">{preview.personName}</span>’s place on this{' '}
               {kindCopy(preview.tripKind).noun}: the expenses and balances already recorded for {preview.personName} become
               yours.

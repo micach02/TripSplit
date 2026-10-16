@@ -173,7 +173,7 @@ export function InvitePanel({ tripId, tripName, person = null, onPersonDone }: I
     <div className="space-y-5">
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {person ? (
-          <div className="rounded-2xl bg-blue-50 p-3 text-sm ring-1 ring-blue-100">
+          <div className="rounded-2xl bg-primary-50 p-3 text-sm ring-1 ring-primary-100">
             <p className="font-semibold text-slate-900">Inviting {person.name}</p>
             <p className="mt-0.5 text-slate-600">
               When they accept, everything recorded for {person.name} becomes theirs.
@@ -181,7 +181,7 @@ export function InvitePanel({ tripId, tripName, person = null, onPersonDone }: I
             <button
               type="button"
               onClick={onPersonDone}
-              className="tap-target mt-1 font-semibold text-blue-600 hover:text-blue-700"
+              className="tap-target mt-1 font-semibold text-primary-600 hover:text-primary-700"
             >
               Invite someone else instead
             </button>
@@ -225,7 +225,7 @@ export function InvitePanel({ tripId, tripName, person = null, onPersonDone }: I
               const fresh = invitation.id === justCreated
               const expiry = expiryLabel(invitation.expires_at)
               return (
-                <li key={invitation.id} className={cn('px-3 py-3', fresh && 'animate-fade-in bg-blue-50/60')}>
+                <li key={invitation.id} className={cn('px-3 py-3', fresh && 'animate-fade-in bg-primary-50/60')}>
                   <div className="flex items-center gap-3">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
                       <Mail className="size-4" aria-hidden />
@@ -239,7 +239,7 @@ export function InvitePanel({ tripId, tripName, person = null, onPersonDone }: I
                     </div>
                   </div>
                   {fresh && (
-                    <p className="mt-2 flex items-start gap-1.5 text-xs text-blue-800">
+                    <p className="mt-2 flex items-start gap-1.5 text-xs text-primary-800">
                       <Link2 className="mt-px size-3.5 shrink-0" aria-hidden />
                       Send this link to {label}. It works once and expires in 7 days.
                     </p>

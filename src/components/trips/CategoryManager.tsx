@@ -162,7 +162,7 @@ export function CategoryManager({ tripId, categories, canManage, onChanged }: Ca
                     aria-pressed={draft.icon === emoji}
                     className={cn(
                       'flex size-11 items-center justify-center rounded-xl text-xl transition',
-                      draft.icon === emoji ? 'bg-blue-50 ring-2 ring-blue-600' : 'ring-1 ring-slate-200 hover:bg-slate-50',
+                      draft.icon === emoji ? 'bg-primary-50 ring-2 ring-primary-600' : 'ring-1 ring-slate-200 hover:bg-slate-50',
                     )}
                   >
                     {emoji}

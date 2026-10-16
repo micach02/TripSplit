@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { FocusLayout } from '@/components/layout/FocusLayout'
+import { PublicLayout } from '@/components/layout/PublicLayout'
 import { RootLayout } from '@/components/layout/RootLayout'
 // Eager on purpose: it must render even when a lazy chunk fails to load.
 import RouteErrorPage from '@/pages/RouteErrorPage'
@@ -16,6 +17,7 @@ import {
   MySpendingPage,
   NotFoundPage,
   NotificationsPage,
+  PrivacyPage,
   ProfilePage,
   RegisterPage,
   ResetPasswordPage,
@@ -26,10 +28,12 @@ import {
   TripLayout,
   TripOverviewPage,
   TripPeoplePage,
+  TermsPage,
   TripSettingsPage,
-  TripSettlementsPage,
   TripsPage,
+  WelcomePage,
 } from '@/routes/lazyPages'
+import { HomeRoute } from '@/routes/HomeRoute'
 import { paths, routerBasename } from '@/routes/paths'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { PublicOnlyRoute } from '@/routes/PublicOnlyRoute'
@@ -39,7 +43,15 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     errorElement: <RouteErrorPage />,
     children: [
-      { index: true, element: <Navigate to={paths.dashboard} replace /> },
+      {
+        // The landing page, legal pages: open to everyone
+        element: <PublicLayout />,
+        children: [
+          { index: true, element: <HomeRoute /> },
+          { path: paths.privacy, element: <PrivacyPage /> },
+          { path: paths.terms, element: <TermsPage /> },
+        ],
+      },
       {
         element: <PublicOnlyRoute />,
         children: [
@@ -75,7 +87,8 @@ export const router = createBrowserRouter([
                   { path: 'expenses', element: <TripExpensesPage /> },
                   { path: 'people', element: <TripPeoplePage /> },
                   { path: 'balances', element: <TripBalancesPage /> },
-                  { path: 'settlements', element: <TripSettlementsPage /> },
+                  // Payments now live on Balances; old links still land there.
+                  { path: 'settlements', element: <Navigate to="../balances#payments" relative="path" replace /> },
                   { path: 'analytics', element: <TripAnalyticsPage /> },
                   { path: 'settings', element: <TripSettingsPage /> },
                 ],
@@ -97,6 +110,7 @@ export const router = createBrowserRouter([
             children: [
               { path: '/trips/:tripId/expenses/new', element: <ExpenseFormPage /> },
               { path: '/trips/:tripId/expenses/:expenseId/edit', element: <ExpenseFormPage /> },
+              { path: paths.welcome, element: <WelcomePage /> },
             ],
           },
         ],

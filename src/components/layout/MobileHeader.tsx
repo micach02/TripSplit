@@ -8,7 +8,7 @@ import { paths } from '@/routes/paths'
 const iconLink = ({ isActive }: { isActive: boolean }) =>
   cn(
     'relative flex size-11 items-center justify-center rounded-full transition-colors',
-    isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800',
+    isActive ? 'bg-primary-50 text-primary-700' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800',
   )
 
 export function MobileHeader() {

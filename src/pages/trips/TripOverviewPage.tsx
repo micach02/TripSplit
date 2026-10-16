@@ -25,7 +25,7 @@ const RECENT_COUNT = 5
 function Stat({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: string | number }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-slate-900/5">
-      <span className="flex size-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+      <span className="flex size-10 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
         <Icon className="size-5" aria-hidden />
       </span>
       <div>
@@ -88,7 +88,7 @@ export default function TripOverviewPage() {
               periodExpenseCount > 0 && (
                 <Link
                   to={tripPath(trip.id, 'expenses')}
-                  className="tap-target shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                  className="tap-target shrink-0 text-sm font-semibold text-primary-600 hover:text-primary-700"
                 >
                   See all
                 </Link>
@@ -101,6 +101,7 @@ export default function TripOverviewPage() {
             ) : recent.data.items.length === 0 ? (
               <EmptyState
                 icon={ReceiptText}
+                emoji="🧾"
                 title={period ? `No expenses in ${period.label} yet.` : 'No expenses yet.'}
                 description={isBudget ? 'Add groceries, meals and bills as you go.' : 'Start tracking your trip expenses.'}
                 action={
@@ -128,7 +129,7 @@ export default function TripOverviewPage() {
             action={
               <Link
                 to={tripPath(trip.id, 'people')}
-                className="tap-target shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                className="tap-target shrink-0 text-sm font-semibold text-primary-600 hover:text-primary-700"
               >
                 Manage
               </Link>

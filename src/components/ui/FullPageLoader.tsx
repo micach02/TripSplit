@@ -6,7 +6,7 @@ export function FullPageLoader() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-5" role="status">
       <LogoMark className="size-12 rounded-2xl" />
-      <Spinner className="size-6 text-blue-600" />
+      <Spinner className="size-6 text-primary-600" />
       <span className="sr-only">Loading TripSplit…</span>
     </div>
   )

@@ -78,7 +78,7 @@ function Editor({ trip, categories, budgetMinor, monthly, existing, onSaved }: E
           const bad = parsed[category.id] && !parsed[category.id]!.ok
           return (
             <li key={category.id}>
-              <label className="flex items-center gap-3 rounded-xl px-3 py-2 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-blue-500">
+              <label className="flex items-center gap-3 rounded-xl px-3 py-2 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-primary-500">
                 <CategoryIcon icon={category.icon} color={category.color} size="sm" />
                 <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800">{category.name}</span>
                 <span className="text-sm text-slate-500">{symbol}</span>
@@ -131,7 +131,7 @@ export function CategoryBudgetsEditor({
   if (error && !data) return <Alert tone="error">{getErrorMessage(error)}</Alert>
   if (!data) {
     return (
-      <div className="flex justify-center py-6 text-blue-600">
+      <div className="flex justify-center py-6 text-primary-600">
         <Spinner />
       </div>
     )

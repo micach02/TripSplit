@@ -364,6 +364,7 @@ export type Database = {
           full_name: string
           guest_trip_id: string | null
           id: string
+          onboarded_at: string | null
           preferred_currency: string
           updated_at: string
         }
@@ -376,6 +377,7 @@ export type Database = {
           full_name: string
           guest_trip_id?: string | null
           id: string
+          onboarded_at?: string | null
           preferred_currency?: string
           updated_at?: string
         }
@@ -388,6 +390,7 @@ export type Database = {
           full_name?: string
           guest_trip_id?: string | null
           id?: string
+          onboarded_at?: string | null
           preferred_currency?: string
           updated_at?: string
         }
@@ -988,6 +991,7 @@ export type Database = {
           full_name: string
           guest_trip_id: string | null
           id: string
+          onboarded_at: string | null
           preferred_currency: string
           updated_at: string
         }

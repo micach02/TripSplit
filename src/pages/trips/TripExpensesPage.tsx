@@ -113,6 +113,7 @@ function ExpenseResults({
     return filtered ? (
       <EmptyState
         icon={Search}
+        emoji="🔎"
         title="No matching expenses"
         description="Try a different search or clear the filters."
         action={
@@ -124,6 +125,7 @@ function ExpenseResults({
     ) : (
       <EmptyState
         icon={ReceiptText}
+        emoji="🧾"
         title="No expenses yet."
         description="Start tracking your trip expenses."
         action={
@@ -428,7 +430,7 @@ export default function TripExpensesPage() {
         <button
           type="button"
           onClick={clearAll}
-          className={cn('inline-flex items-center gap-1 rounded-md text-sm font-semibold text-blue-600 hover:text-blue-700')}
+          className={cn('inline-flex items-center gap-1 rounded-md text-sm font-semibold text-primary-600 hover:text-primary-700')}
         >
           <X className="size-4" aria-hidden />
           Clear search and filters

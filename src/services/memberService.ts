@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { absoluteUrl, invitePath } from '@/routes/paths'
+import { inviteShareUrl } from '@/routes/paths'
 import type { TripInvitation } from '@/types/models'
 import { invitationState, type InvitationState } from '@/utils/invitations'
 import type { TripKind } from '@/utils/tripKind'
@@ -155,7 +155,7 @@ export async function acceptInvitation(invitationId: string): Promise<string> {
 
 /** The shareable link for an invitation. */
 export function invitationLink(token: string): string {
-  return absoluteUrl(invitePath(token))
+  return inviteShareUrl(token)
 }
 
 export interface InvitationPreview {

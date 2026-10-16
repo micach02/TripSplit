@@ -8,7 +8,10 @@ type Enum<T extends keyof TripSplitSchema['Enums']> = TripSplitSchema['Enums'][T
 
 /** App-facing aliases for database rows. */
 export type Profile = Row<'profiles'>
-export type ProfileUpdate = Pick<Update<'profiles'>, 'full_name' | 'avatar_url' | 'preferred_currency' | 'default_trip_id'>
+export type ProfileUpdate = Pick<
+  Update<'profiles'>,
+  'full_name' | 'avatar_url' | 'preferred_currency' | 'default_trip_id' | 'onboarded_at'
+>
 
 export type Trip = Row<'trips'>
 export type TripMember = Row<'trip_members'>

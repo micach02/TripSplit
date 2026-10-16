@@ -44,12 +44,12 @@ export function PeopleInput({ label, hint, value, onChange }: PeopleInputProps) 
       {value.length > 0 && (
         <ul className="mb-2 flex flex-wrap gap-2" aria-label="Added">
           {value.map((name) => (
-            <li key={name} className="flex items-center gap-1 rounded-full bg-blue-50 py-1 pr-1 pl-3 text-sm font-semibold text-blue-800">
+            <li key={name} className="flex items-center gap-1 rounded-full bg-primary-50 py-1 pr-1 pl-3 text-sm font-semibold text-primary-800">
               {name}
               <button
                 type="button"
                 onClick={() => onChange(value.filter((other) => other !== name))}
-                className="rounded-full p-1.5 text-blue-700 hover:bg-blue-100"
+                className="rounded-full p-1.5 text-primary-700 hover:bg-primary-100"
                 aria-label={`Remove ${name}`}
               >
                 <X className="size-3.5" aria-hidden />

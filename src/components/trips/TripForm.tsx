@@ -133,7 +133,7 @@ export function TripForm({ tripId, initial, coverUrl = null, currencyLocked = fa
       <div>
         <span className="mb-1.5 block text-sm font-semibold text-slate-700">Cover photo</span>
         <div className="relative overflow-hidden rounded-2xl">
-          <TripCover tripId={tripId ?? (values.name || 'new-trip')} name={values.name} url={shownCover} className="h-36 sm:h-44" />
+          <TripCover tripId={tripId ?? (values.name || 'new-trip')} name={values.name} url={shownCover} kind={values.kind} className="h-36 sm:h-44" />
           <div className="absolute right-3 bottom-3 flex gap-2">
             {shownCover && (
               <Button variant="outline" size="sm" onClick={removeCover} icon={<Trash2 className="size-4" aria-hidden />}>
@@ -235,7 +235,7 @@ export function TripForm({ tripId, initial, coverUrl = null, currencyLocked = fa
             type="checkbox"
             checked={values.rollover}
             onChange={(event) => set('rollover')(event.target.checked)}
-            className="mt-0.5 size-5 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            className="mt-0.5 size-5 shrink-0 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
           />
           <span>
             <span className="block text-sm font-semibold text-slate-800">Roll over what’s left</span>

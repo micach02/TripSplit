@@ -12,8 +12,8 @@ function TabLink({ to, label, icon: Icon, end }: NavItem) {
         end={end}
         className={({ isActive }) =>
           cn(
-            'flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-colors',
-            isActive ? 'text-blue-600' : 'text-slate-500 active:text-slate-800',
+            'flex h-15 flex-col items-center justify-center gap-0.5 text-[11px] font-bold transition-colors',
+            isActive ? 'text-primary-600' : 'text-slate-500 active:text-slate-800',
           )
         }
       >
@@ -28,9 +28,9 @@ export function MobileTabBar() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
     >
-      <ul className="mx-auto grid max-w-md grid-cols-5 items-center">
+      <ul className="pointer-events-auto mx-auto grid max-w-md grid-cols-5 items-center rounded-full bg-surface/95 px-1 shadow-float ring-1 ring-slate-900/[0.06] backdrop-blur-md">
         {mobileNavLeft.map((item) => (
           <TabLink key={item.to} {...item} />
         ))}
@@ -38,7 +38,7 @@ export function MobileTabBar() {
           <NavLink
             to={paths.addExpense}
             aria-label="Add expense"
-            className="-mt-7 flex size-15 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg shadow-blue-600/35 ring-4 ring-surface transition-transform active:scale-95"
+            className="-mt-8 flex size-16 items-center justify-center rounded-full bg-sunset-600 text-white shadow-lg shadow-sunset-500/40 ring-[5px] ring-surface transition-transform active:scale-95"
           >
             <Plus className="size-7" strokeWidth={2.5} aria-hidden />
           </NavLink>
