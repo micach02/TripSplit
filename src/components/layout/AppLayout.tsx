@@ -6,10 +6,13 @@ import { MobileTabBar } from '@/components/layout/MobileTabBar'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { PageSkeleton } from '@/components/ui/Skeleton'
 import { InvitationsProvider } from '@/contexts/InvitationsProvider'
+import { useSearchShortcut } from '@/hooks/useSearchShortcut'
 import { prefetchCommonPages } from '@/routes/prefetch'
 
 /** Signed-in shell: sidebar on desktop, header + bottom tab bar on mobile. */
 export function AppLayout() {
+  useSearchShortcut()
+
   useEffect(() => {
     prefetchCommonPages()
   }, [])

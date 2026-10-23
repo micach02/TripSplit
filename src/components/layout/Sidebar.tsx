@@ -31,7 +31,7 @@ export function Sidebar() {
 
       <nav aria-label="Main" className="mt-6 flex-1 overflow-y-auto px-3">
         <ul className="space-y-1">
-          {desktopNav.map(({ to, label, icon: Icon, end }) => (
+          {desktopNav.map(({ to, label, icon: Icon, end, shortcut }) => (
             <li key={to}>
               <NavLink
                 to={to}
@@ -45,6 +45,12 @@ export function Sidebar() {
               >
                 <Icon className="size-5 shrink-0" aria-hidden />
                 {label}
+                {shortcut && (
+                  <kbd className="ml-auto rounded-md bg-slate-100 px-1.5 font-sans text-xs font-semibold text-slate-500 ring-1 ring-slate-200">
+                    <span className="sr-only">Shortcut: </span>
+                    {shortcut}
+                  </kbd>
+                )}
                 {to === paths.notifications && invitationCount > 0 && (
                   <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-bold text-white">
                     {invitationCount > 9 ? '9+' : invitationCount}

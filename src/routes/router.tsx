@@ -21,6 +21,7 @@ import {
   ProfilePage,
   RegisterPage,
   ResetPasswordPage,
+  SearchPage,
   SettingsPage,
   TripAnalyticsPage,
   TripBalancesPage,
@@ -97,6 +98,7 @@ export const router = createBrowserRouter([
               // Shared invite links; signed-out visitors log in or register first, then come back here.
               { path: '/invite/:token', element: <InvitePage /> },
               { path: paths.spending, element: <MySpendingPage /> },
+              { path: paths.search, element: <SearchPage /> },
               // The old Activity placeholder
               { path: paths.activity, element: <Navigate to={paths.spending} replace /> },
               { path: paths.notifications, element: <NotificationsPage /> },

@@ -13,6 +13,12 @@ export function formatDate(value: string | Date): string {
   return format(toDate(value), 'MMM d, yyyy')
 }
 
+/** For tight rows: "Nov 3" this year, "Nov 3, 2025" otherwise. */
+export function formatShortDate(value: string | Date, now: Date = new Date()): string {
+  const date = toDate(value)
+  return format(date, isSameYear(date, now) ? 'MMM d' : 'MMM d, yyyy')
+}
+
 /** "November 3, 2026" */
 export function formatLongDate(value: string | Date): string {
   return format(toDate(value), 'MMMM d, yyyy')

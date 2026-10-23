@@ -1066,6 +1066,27 @@ export type Database = {
         Args: { p_expense: Json; p_splits: Json }
         Returns: string
       }
+      search_expenses: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          amount: number
+          category_color: string
+          category_icon: string
+          category_name: string
+          converted_amount: number
+          currency: string
+          description: string
+          expense_date: string
+          id: string
+          notes: string
+          paid_by: string
+          paid_by_name: string
+          trip_currency: string
+          trip_id: string
+          trip_kind: Database["tripsplit"]["Enums"]["trip_kind"]
+          trip_name: string
+        }[]
+      }
       skip_recurring: {
         Args: { p_period: string; p_recurring_id: string }
         Returns: undefined

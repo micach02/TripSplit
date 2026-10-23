@@ -20,6 +20,7 @@ export function prefetchCommonPages(): void {
       import('@/pages/trips/TripBalancesPage'),
       import('@/pages/expenses/ExpenseFormPage'),
       import('@/pages/spending/MySpendingPage'),
+      import('@/pages/search/SearchPage'),
     ]
     // A miss here is harmless: the page loads normally when visited.
     for (const page of pages) page.catch(() => undefined)

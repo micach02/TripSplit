@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { Download, Plus, ReceiptText, Search, SlidersHorizontal, X } from 'lucide-react'
 import { ExpenseDetailsDialog } from '@/components/expenses/ExpenseDetailsDialog'
 import { ExpenseList } from '@/components/expenses/ExpenseList'
@@ -21,6 +22,7 @@ import { getErrorMessage } from '@/lib/errors'
 import { newExpensePath } from '@/routes/paths'
 import {
   EMPTY_EXPENSE_FILTERS,
+  getExpense,
   listAllExpenses,
   listExpenses,
   type ExpenseFilters,
@@ -278,6 +280,36 @@ export default function TripExpensesPage() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [exporting, setExporting] = useState(false)
   useDataChanged(() => setRefreshKey((key) => key + 1))
+  const [searchParams, setSearchParams] = useSearchParams()
+  const linkedExpense = searchParams.get('expense')
+
+  // From Search (?expense=…): open that expense's details, whatever month it's in.
+  useEffect(() => {
+    if (!linkedExpense) return
+    let cancelled = false
+    getExpense(linkedExpense).then(
+      (expense) => {
+        if (!cancelled && expense && expense.trip_id === trip.id) setSelected(expense)
+      },
+      () => undefined, // gone or not visible: just show the list
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [linkedExpense, trip.id])
+
+  function closeDetails() {
+    setSelected(null)
+    if (linkedExpense) {
+      setSearchParams(
+        (params) => {
+          params.delete('expense')
+          return params
+        },
+        { replace: true },
+      )
+    }
+  }
 
   const minAmount = amountFilter(minText, trip.currency)
   const maxAmount = amountFilter(maxText, trip.currency)
@@ -464,9 +496,9 @@ export default function TripExpensesPage() {
       <ExpenseDetailsDialog
         expense={selected}
         context={context}
-        onClose={() => setSelected(null)}
+        onClose={closeDetails}
         onDeleted={() => {
-          setSelected(null)
+          closeDetails()
           toast.success('Expense deleted.')
           setRefreshKey((key) => key + 1)
           reload()

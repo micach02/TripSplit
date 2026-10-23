@@ -24,6 +24,7 @@ export const paths = {
   addExpense: '/expenses/new',
   activity: '/activity',
   spending: '/spending',
+  search: '/search',
   notifications: '/notifications',
   profile: '/profile',
   settings: '/settings',

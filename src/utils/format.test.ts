@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { firstName, formatDate, formatDateRange, initials } from './format'
+import { firstName, formatDate, formatDateRange, formatShortDate, initials } from './format'
 
 describe('formatDateRange', () => {
   it('collapses ranges within one month', () => {
@@ -22,6 +22,14 @@ describe('formatDateRange', () => {
 describe('formatDate', () => {
   it('does not shift calendar dates across time zones', () => {
     expect(formatDate('2026-11-03')).toBe('Nov 3, 2026')
+  })
+})
+
+describe('formatShortDate', () => {
+  it('drops the year for dates this year and keeps it otherwise', () => {
+    const now = new Date(2026, 9, 23)
+    expect(formatShortDate('2026-11-03', now)).toBe('Nov 3')
+    expect(formatShortDate('2025-12-30', now)).toBe('Dec 30, 2025')
   })
 })
 

@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router'
-import { Bell, Settings } from 'lucide-react'
+import { Bell, Search, Settings } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { useInvitations } from '@/hooks/useInvitations'
 import { cn } from '@/lib/cn'
@@ -21,6 +21,9 @@ export function MobileHeader() {
           <Logo />
         </Link>
         <div className="-mr-2 flex items-center">
+          <NavLink to={paths.search} className={iconLink} aria-label="Search">
+            <Search className="size-5" aria-hidden />
+          </NavLink>
           <NavLink
             to={paths.notifications}
             className={iconLink}

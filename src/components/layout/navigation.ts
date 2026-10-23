@@ -1,4 +1,4 @@
-import { Bell, ChartPie, CirclePlus, CircleUser, House, LayoutDashboard, Settings, Wallet, type LucideIcon } from 'lucide-react'
+import { Bell, ChartPie, CirclePlus, CircleUser, House, LayoutDashboard, Search, Settings, Wallet, type LucideIcon } from 'lucide-react'
 import { paths } from '@/routes/paths'
 
 export interface NavItem {
@@ -7,10 +7,13 @@ export interface NavItem {
   icon: LucideIcon
   /** Only active on an exact path match (so /trips isn't active on /trips/new). */
   end?: boolean
+  /** Keyboard shortcut shown next to the label */
+  shortcut?: string
 }
 
 export const desktopNav: NavItem[] = [
   { to: paths.dashboard, label: 'Dashboard', icon: LayoutDashboard },
+  { to: paths.search, label: 'Search', icon: Search, shortcut: '/' },
   { to: paths.spending, label: 'My spending', icon: ChartPie },
   { to: paths.trips, label: 'Budgets & Trips', icon: Wallet, end: true },
   { to: paths.newTrip, label: 'Create', icon: CirclePlus },
